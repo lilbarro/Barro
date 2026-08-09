@@ -1,0 +1,25 @@
+rpc:
+  enabled: false
+  application_id: '1532368664479793243'
+  default:
+    type: STREAMING
+    name: Barro's Self Bot
+    details: Using Barro Self-Bot
+    state: Barro's a Complete Self Bot Made By barro.x
+    url: https://www.twitch.tv/barro
+    party:
+      current: 1
+      max: 1
+      id: ''
+    timestamps:
+      start: null
+      end: null
+    assets:
+      large_image: >-
+        https://cdn.discordapp.com/attachments/1532361087754834026/1532379203549401191/ftx7mqb.png?ex=6a6ca2d8&is=6a6b5158&hm=d7b70946b13c1275d5d741d2231f19365394236dfde5152173bd223f041b96cd&
+      large_text: ''
+      small_image: ''
+      small_text: ''
+    buttons:
+      - label: Join Barro's Discord
+        url: https://discord.gg/KCchsavsYZ
