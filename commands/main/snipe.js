@@ -8,7 +8,7 @@ export default {
   category: "main",
   type: "both",
   permissions: [],
-  cooldown: 3,
+  cooldown: 10,
 
   execute: async (client, message, args) => {
     try {

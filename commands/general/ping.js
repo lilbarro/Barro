@@ -9,7 +9,7 @@ export default {
     category: 'general', 
     type: 'both', // Can be chosen from dm_only or server_only
     permissions: ['SendMessages'], // Permissions required to execute the command
-    cooldown: 5,
+    cooldown: 15,
     
     /**
      * Execute the ping command

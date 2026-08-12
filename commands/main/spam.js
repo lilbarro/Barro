@@ -10,7 +10,7 @@ export default {
   category: "troll",
   type: "both",
   permissions: ["SendMessages"],
-  cooldown: 5,
+  cooldown: 60,
 
   async execute(client, message, args) {
     if (args.length < 2) {
@@ -64,8 +64,8 @@ export default {
     }
 
     try {
-      // Initialize rate limiter (allow 3 concurrent operations to avoid hitting rate limits)
-      const rateLimiter = new RateLimitManager(3);
+      // Initialize rate limiter (sequential, 1 concurrent operation)
+      const rateLimiter = new RateLimitManager(1);
 
       // Send confirmation message
       const statusMsg = await message.channel.send(formatAnsiBlock([

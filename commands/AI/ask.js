@@ -8,7 +8,7 @@ export default {
     category: 'AI',
     type: 'both',
     permissions: ['SendMessages'],
-    cooldown: 5,
+    cooldown: 30,
     async execute(client, message, args) {
         const query = args.join(' ');
 

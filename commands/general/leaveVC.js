@@ -8,7 +8,7 @@ export default {
     category: 'general',
     type: 'server_only',
     permissions: ['SendMessages'],
-    cooldown: 5,
+    cooldown: 30,
 
     /**
      * Execute the leavevc command

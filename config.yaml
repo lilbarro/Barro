@@ -1,5 +1,11 @@
 selfbot:
-  token: "PASTE_YOUR_TOKEN_HERE"
+  # The user token MUST come from the DISCORD_TOKEN environment variable, not
+  # this file. Hard-coding the token in source control (or anywhere committed)
+  # is how accounts get hijacked. To set it on Windows PowerShell:
+  #     $env:DISCORD_TOKEN = "your token here"
+  # On Bash:
+  #     export DISCORD_TOKEN="your token here"
+  token: ""
   prefix: ","
   status: "dnd"
   dm_logs: false
@@ -19,7 +25,7 @@ vc_command:
   reconnect_delay: 5
   max_attempts: 3
 client_properties:
-  browser: Discord iOS
+  browser: Discord Client
 nuke:
   nuke_message: "@everyone Alpha will yall"
   server_name: Alpha owns this server!

@@ -17,7 +17,7 @@ export function clearSession(userId) {
 const conversations = new Map();
 const cooldowns = new Map();
 const recentAiMessages = new Map();
-const COOLDOWN_MS = 5000;
+const COOLDOWN_MS = 30000;
 
 export function formatDuration(ms) {
   const secs = Math.floor(ms / 1000);
@@ -143,7 +143,16 @@ export async function handleAiAfkMessage(client, message) {
     // ---- SKIP MASS MENTIONS ----
     if (message.mentions.everyone || message.content.includes('@here')) return;
 
+    // ---- SKIP OWN MESSAGES ----
+    if (authorId === client.user?.id) return;
+
     // ---- FIND TARGETED AFK USER ----
+    // Trigger rules (locked-in, do not loosen):
+    //   * Guild channels: only when the message @mentions an AFK user.
+    //   * DMs (1:1 + group DMs): every incoming message is treated as addressed
+    //     to every active AFK session, since DMs have no @mention mechanic.
+    // This mirrors the AI Reply handler: the account never reacts to ambient
+    // traffic in busy servers, which is what makes selfbots look like bots.
     const targeted = new Set();
 
     for (const user of message.mentions.users.values()) {
@@ -152,7 +161,7 @@ export async function handleAiAfkMessage(client, message) {
 
     if (!message.guild) {
       for (const id of afkSessions.keys()) {
-        if (id !== authorId) targeted.add(id);
+        if (id !== authorId && id !== client.user?.id) targeted.add(id);
       }
     }
 

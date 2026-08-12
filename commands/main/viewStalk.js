@@ -9,7 +9,7 @@ export default {
   category: "troll",
   type: "both",
   permissions: ["SendMessages"],
-  cooldown: 2,
+  cooldown: 30,
 
   async execute(client, message, args) {
     try {

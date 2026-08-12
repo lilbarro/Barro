@@ -5,7 +5,7 @@ const DATA_PATH = resolve('./data/aireply.json');
 
 // Cooldown tracker - userId: lastResponseTime
 const cooldowns = new Map();
-const COOLDOWN_MS = 5000; // 5 seconds per person
+const COOLDOWN_MS = 30000; // 30 seconds per person
 
 // Max messages to remember per person
 const MAX_HISTORY = 20;
@@ -157,6 +157,13 @@ export async function handleAIReply(client, message) {
     const isReply = message.reference && message.reference.messageId;
 
     let shouldReply = false;
+
+    // ---- Trigger rules (locked-in, do not loosen) ----
+    // DMs (1:1): always reply.
+    // Group DMs and server channels: reply ONLY when the sender @mentions us
+    //   OR replies to one of our messages. Never on ambient traffic.
+    // This prevents the handler from firing on every message in busy servers,
+    // which is what makes the account look like a selfbot to Discord.
 
     // Check if reply is to our message
     if (isReply) {

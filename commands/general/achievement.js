@@ -10,7 +10,7 @@ export default {
     category: 'general',
     type: 'both',
     permissions: ['SendMessages', 'AttachFiles'], // Added AttachFiles permission
-    cooldown: 60,
+    cooldown: 30,
 
     execute: async (client, message, args) => {
         const givenIcon = args[0];

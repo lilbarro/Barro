@@ -6,7 +6,7 @@ export default {
   category: 'general',
   type: 'both',
   permissions: [],
-  cooldown: 5,
+  cooldown: 30,
 
   async execute(client, message, args) {
     const amount = Number.parseInt(args[0], 10);

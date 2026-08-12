@@ -6,7 +6,7 @@ export default {
   aliases: ["hack", "fh"],
   usage: "<@user/userID>",
   category: "general",
-  cooldown: 10,
+  cooldown: 60,
 
   execute: async (client, message, args) => {
     try {

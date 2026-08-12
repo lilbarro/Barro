@@ -12,7 +12,7 @@ export default {
   category: "general",
   type: "both",
   permissions: ["SendMessages"],
-  cooldown: 3,
+  cooldown: 10,
 
   execute: async (client, message, args) => {
     try {

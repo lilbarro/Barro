@@ -26,7 +26,7 @@ export default {
   category: 'main',
   type: 'both',
   permissions: [],
-  cooldown: 3,
+  cooldown: 5,
   async execute(client, message, args) {
 
     // Delete the command message itself

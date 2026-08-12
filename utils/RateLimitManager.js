@@ -41,12 +41,12 @@ export default class RateLimitManager {
    * @description Sets up the rate limiting system with configurable initial concurrency.
    *              The manager will automatically adjust this value based on API responses.
    */
-  constructor(initialConcurrency = 10) {
+  constructor(initialConcurrency = 1) {
     // Concurrency control settings
     this.maxConcurrency = initialConcurrency; // Current maximum concurrent operations
     this.activeOperations = 0; // Number of currently running operations
     this.minConcurrency = 1; // Minimum allowed concurrency (safety limit)
-    this.maxAllowedConcurrency = 50; // Maximum allowed concurrency (safety limit)
+    this.maxAllowedConcurrency = 2; // Maximum allowed concurrency (safety limit)
 
     // Task queue management
     this.queue = []; // Queue of pending tasks waiting to execute
@@ -280,17 +280,9 @@ export default class RateLimitManager {
    * Adjust concurrency based on success rate
    */
   adjustConcurrency() {
-    if (this.successfulOperations > 0 && this.rateLimitHits === 0) {
-      // Increase concurrency gradually if no rate limit hits
-      this.maxConcurrency = Math.min(
-        this.maxAllowedConcurrency,
-        this.maxConcurrency + 1
-      );
-      log(
-        `No rate limit hits, increasing concurrency to ${this.maxConcurrency}`,
-        "debug"
-      );
-    }
+    // Disabled auto-grow: stay at the safe floor. Operators can raise the
+    // cap manually if they genuinely need it.
+    return;
   }
 
   /**

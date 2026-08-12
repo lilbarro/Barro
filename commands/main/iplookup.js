@@ -9,7 +9,7 @@ export default {
     category: 'misc',
     type: 'both',
     permissions: ['SendMessages'],
-    cooldown: 5,
+    cooldown: 15,
 
     execute: async (client, message, args) => {
         const ip = args[0];

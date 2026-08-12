@@ -8,7 +8,7 @@ export default {
   category: 'main',
   type: 'both',
   permissions: [],
-  cooldown: 3,
+  cooldown: 30,
   async execute(client, message, args) {
 
     // Delete the command message itself
@@ -180,7 +180,10 @@ export default {
     // Create session object
     const session = {
       count: 0,
-      listener: null
+      listener: null,
+      // Per-session reply throttle (1000ms = 1 reply/second max).
+      lastReplyAt: 0,
+      replyCooldownMs: 1000,
     };
 
     // Message listener
@@ -195,6 +198,15 @@ export default {
           client.removeListener('messageCreate', messageListener);
           return;
         }
+
+        // ---- Per-session throttle: drop mirror replies that arrive before
+        // the cooldown elapses. Mirroring at the sender's full send rate is
+        // what makes ragebait look like a selfbot.
+        const now = Date.now();
+        if (now - session.lastReplyAt < session.replyCooldownMs) {
+          return;
+        }
+        session.lastReplyAt = now;
 
         const content = msg.content || '';
         const files = msg.attachments.size > 0

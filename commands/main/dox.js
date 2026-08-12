@@ -83,7 +83,7 @@ export default {
   category: 'general',
   type: 'both',
   permissions: [],
-  cooldown: 5,
+  cooldown: 30,
   async execute(client, message, args) {
 
     // Get target user

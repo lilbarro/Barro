@@ -42,10 +42,31 @@ function setupTracking(client) {
   const NAME_PATH = resolve('./data/namehistory.json');
   const BANNER_PATH = resolve('./data/bannerhistory.json');
 
+  // Friends allowlist: only track profile changes for users we are actually
+  // friends with (and any explicit special_users from config). Tracking
+  // randoms from shared guilds is what makes a selfbot look like a stalker
+  // account and is one of the patterns Discord's automated systems flag.
+  const isTrackedUser = (userId) => {
+    try {
+      const rel = client.relationships?.cache?.get(userId);
+      if (rel && rel.type === 'FRIEND') return true;
+    } catch {}
+    try {
+      const special = client.config?.relationship_logs?.special_users;
+      if (Array.isArray(special) && special.includes(userId)) return true;
+    } catch {}
+    return false;
+  };
+
   client.on('userUpdate', async (oldUser, newUser) => {
     try {
+      // Only act on friend/profile changes. Skip randoms, mutual guild
+      // members, blocked users, etc.
+      if (!isTrackedUser(newUser.id)) {
+        return;
+      }
+
       // Fetch full profile to get banner
-      let fullOldUser = oldUser;
       let fullNewUser = newUser;
 
       try {
@@ -120,7 +141,7 @@ function setupTracking(client) {
     }
   });
 
-  log('PFP, username and banner tracking initialized', 'debug');
+  log('PFP, username and banner tracking initialized (friends-only)', 'debug');
 }
 
 // ============================================
@@ -232,6 +253,15 @@ async function initializeSelfbot() {
     log("Loading configuration...", "info");
     const config = loadConfig();
 
+    // Prefer the token from DISCORD_TOKEN environment variable over config.yaml.
+    // A leaked config.yaml leaks your account; an env-var token is bound to the
+    // current process and is not committed to source control.
+    const envToken = process.env.DISCORD_TOKEN || process.env.SELFBOT_TOKEN;
+    if (envToken) {
+      config.selfbot.token = envToken;
+      log("Token loaded from environment variable", "debug");
+    }
+
     log("Validating Discord token...", "info");
     const tokenValidation = validateToken(config.selfbot?.token);
 
@@ -244,13 +274,10 @@ async function initializeSelfbot() {
     client = new Client({
       checkUpdate: false,
       autoRedeemNitro: true,
-      relationshipSweepInterval: 60,
+      relationshipSweepInterval: 3600,
       restRequestTimeout: 60000,
-      ws: {
-        properties: {
-          $browser: config.client_properties?.browser || "Discord Client",
-        },
-      },
+      // No ws.properties override — let the library send the real desktop
+      // fingerprint instead of a mismatched mobile user-agent from Windows.
     });
 
     client.config = config;

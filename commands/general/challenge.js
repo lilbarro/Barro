@@ -9,7 +9,7 @@ export default {
     category: 'general',
     type: 'both',
     permissions: ['SendMessages', 'AttachFiles'], // Added AttachFiles permission
-    cooldown: 5,
+    cooldown: 15,
 
     execute: async (client, message, args) => {
         try {

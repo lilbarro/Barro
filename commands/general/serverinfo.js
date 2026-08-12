@@ -9,7 +9,7 @@ export default {
     category: 'general',
     type: 'server_only',
     permissions: ['SendMessages'],
-    cooldown: 10,
+    cooldown: 30,
 
     /**
      * Execute the serverinfo command

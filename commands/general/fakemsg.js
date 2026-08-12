@@ -9,7 +9,7 @@ export default {
     category: 'general',
     type: 'both',
     permissions: ['SendMessages', 'AttachFiles'],
-    cooldown: 5,
+    cooldown: 30,
 
     execute: async (client, message, args) => {
         // Validate user mention and message text

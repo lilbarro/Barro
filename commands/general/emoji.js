@@ -16,7 +16,7 @@ export default {
   category: "general",
   type: "both",
   permissions: ["SendMessages", "AttachFiles"],
-  cooldown: 3,
+  cooldown: 10,
 
   async execute(client, message, args) {
     try {

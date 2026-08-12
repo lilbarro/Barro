@@ -75,6 +75,11 @@ dist
 public
 data/
 temp/
+terminal.txt
+# Local config overrides — keep the canonical config.yaml in source so all
+# changes are visible, but don't commit deploy-specific overrides.
+config.local.yaml
+*.local.yaml
 
 # vuepress build output
 .vuepress/dist

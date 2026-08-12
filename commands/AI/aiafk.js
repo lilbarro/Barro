@@ -9,7 +9,7 @@ export default {
   category: 'ai',
   type: 'both',
   permissions: [],
-  cooldown: 5,
+  cooldown: 15,
   async execute(client, message, args) {
 
     const cfg = loadConfig()?.ai_afk;

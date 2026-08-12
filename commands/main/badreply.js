@@ -63,7 +63,7 @@ export default {
   category: "troll",
   type: "both",
   permissions: ["SendMessages"],
-  cooldown: 5,
+  cooldown: 30,
 
   async execute(client, message, args) {
     if (!args.length) {
@@ -153,6 +153,10 @@ export default {
       replyCount: 0,
       task: task,
       isCancelled: false,
+      // Per-session reply throttle: enforce a minimum gap between replies so
+      // we don't fire one reply per incoming message at full send rate.
+      lastReplyAt: 0,
+      replyCooldownMs: 1000,
     };
 
     // Add cancellation listener to clean up session immediately
@@ -183,6 +187,14 @@ export default {
           if (!msg) return;
           if (msg.author?.id !== targetUser.id) return;
           if (msg.author.bot) return;
+
+          // ---- Per-session throttle: drop replies that arrive before the
+          // cooldown elapses, instead of replying at the sender's full rate.
+          const now = Date.now();
+          if (now - sessionData.lastReplyAt < sessionData.replyCooldownMs) {
+            return;
+          }
+          sessionData.lastReplyAt = now;
 
           // Avoid replying to messages not visible to the bot
               const replies = getBadReplies();

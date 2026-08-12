@@ -8,7 +8,7 @@ export default {
   category: "general",
   type: "both",
   permissions: ["SendMessages"],
-  cooldown: 5,
+  cooldown: 10,
 
   async execute(client, message, args) {
     const currency = args[0];

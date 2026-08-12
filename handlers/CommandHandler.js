@@ -76,7 +76,11 @@ export async function loadCommands(client) {
       if (!client.cooldowns.has(command.name)) client.cooldowns.set(command.name, new Map());
       const now = Date.now();
       const timestamps = client.cooldowns.get(command.name);
-      const cooldownAmount = (command.cooldown || 3) * 1000;
+      // Floor the per-command cooldown at 5 seconds. Anything shorter would
+      // let a single account hammer the same command at automated-looking
+      // cadence and is the kind of pattern Discord's automated systems
+      // specifically track for selfbot behaviour.
+      const cooldownAmount = Math.max((command.cooldown || 5), 5) * 1000;
 
       if (timestamps.has(message.author.id)) {
         const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
