@@ -30,7 +30,7 @@ The interface follows a stripped-back terminal style: black space, royal-blue la
 ```yaml
 ai:               | aiAsk, aiReply, aiAfk
 main:             | dox, osint, badreply, fakehack, iplookup, purge, ragebait, spam, stalk
-utility:          | afk, avatar, banner, hypesquad, joinVC, leaveVC, ping, serverinfo, tokencheck, tokeninfo
+utility:          | afk, avatar, banner, hypesquad, joinVC, leaveVC, ping, serverinfo, tokeninfo
 fun:              | fakemsg, fakenitro, faketyping, nitrosniper
 settings:         | allow, backup, prefix, reload, revoke, selfinfo, support, taskStop, view
 status:           | rpc, savepresence, status, statusrotator
