@@ -18,12 +18,12 @@ export default {
      */
     execute: async (client, message, args) => {
         if (!message.guild) {
-            return message.channel.send('> ❌ **Error:** This command can only be used in a server.');
+            return message.channel.send('> `**Error:** This command can only be used in a server.`');
         }
 
         const channelIdentifier = args[0];
         if (!channelIdentifier) {
-            return message.channel.send('> ❌ **Error:** Please provide a channel URL or ID.');
+            return message.channel.send('>  `**Error:** Please provide a channel URL or ID.`');
         }
 
         let channelId;
@@ -35,30 +35,30 @@ export default {
             // Assume it's a direct ID if it's all digits
             channelId = channelIdentifier;
         } else {
-            return message.channel.send('> ❌ **Error:** Invalid channel URL or ID provided.');
+            return message.channel.send('>  `**Error:** Invalid channel URL or ID provided.`');
         }
 
         try {
             const channel = await client.channels.fetch(channelId);
 
             if (!channel) {
-                return message.channel.send('> ❌ **Error:** Could not find a channel with that ID.');
+                return message.channel.send('>  `**Error:** Could not find a channel with that ID.`');
             }
 
             if (channel.type !== 'GUILD_VOICE' && channel.type !== 'GUILD_STAGE_VOICE') {
-                return message.channel.send('> ❌ **Error:** The provided ID/URL does not belong to a voice or stage channel.');
+                return message.channel.send('>  `**Error:** The provided ID/URL does not belong to a voice or stage channel.`');
             }
 
             // Check permissions
             const permissions = channel.permissionsFor(client.user);
             if (!permissions.has('VIEW_CHANNEL')) {
-                return message.channel.send('> ❌ **Error:** I do not have permission to view that voice channel.');
+                return message.channel.send('>  `**Error:** I do not have permission to view that voice channel.`');
             }
             if (!permissions.has('CONNECT')) {
-                return message.channel.send('> ❌ **Error:** I do not have permission to connect to that voice channel.');
+                return message.channel.send('>  `**Error:** I do not have permission to connect to that voice channel.`');
             }
             if (!permissions.has('SPEAK')) {
-                return message.channel.send('> ❌ **Error:** I do not have permission to speak in that voice channel.');
+                return message.channel.send('>  `**Error:** I do not have permission to speak in that voice channel.`');
             }
 
             // Check if the selfbot has permissions to manage its own mute/deafen state if configured to do so
@@ -86,7 +86,7 @@ export default {
                 });
                 log(`Attempting to join voice channel: ${channel.name} (${channel.id}) in ${message.guild.name} via WebSocket`, 'debug');
                 message.channel.send(formatAnsiBlock([
-                    `✅ ${style('Attempting to join voice channel:', '1;30')} \`${channel.name}\``
+                    `${style('Attempting to join voice channel:', '1;30')} \`${channel.name}\``
                 ]));
 
                 // Store last joined voice channel for auto-reconnect
@@ -115,17 +115,17 @@ export default {
                             statusMessage += ' (Failed to self-deafen: Server-deafened or missing permissions)';
                         }
                         if (statusMessage) {
-                            message.channel.send(`> ℹ️ **Voice State Update:** ${statusMessage.trim()}`);
+                            message.channel.send(`> **Voice State Update:** ${statusMessage.trim()}`);
                         }
                     }
                 }, 2000); // Wait 2 seconds for voice state to update
             } else {
-                return message.channel.send('> ❌ **Error:** Could not access WebSocket shard to join voice channel.');
+                return message.channel.send('> `**Error:** Could not access WebSocket shard to join voice channel.`');
             }
 
         } catch (error) {
             log(`Error joining voice channel: ${error.message}`, 'error');
-            return message.channel.send(`> ❌ **Error:** An error occurred while trying to join the voice channel: ${error.message}`);
+            return message.channel.send(`> **Error:** An error occurred while trying to join the voice channel: ${error.message}`);
         }
     },
 };

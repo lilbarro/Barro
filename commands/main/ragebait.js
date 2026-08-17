@@ -10,240 +10,85 @@ export default {
   permissions: [],
   cooldown: 30,
   async execute(client, message, args) {
-
-    // Delete the command message itself
     await message.delete().catch(() => {});
-
-    // ---- NO ARGS ----
     if (!args[0]) {
-      const confirm = await message.channel.send(formatAnsiBlock([
-        style('[ RAGEBAIT ]', '1;30'),
-        '',
-        style('INFO:', '1;31') + ' ' + style('Ragebait Commands:', '0;97'),
-        '  ,ragebait @user - Start mirroring a user',
-        '  ,ragebait stop @user - Stop mirroring a user',
-        '  ,ragebait stopall - Stop all sessions',
-        '  ,ragebait list - Show active sessions'
-      ]));
-      setTimeout(() => confirm.delete().catch(() => {}), 1000);
-      return;
+      return message.channel.send(formatThreeBlock('Barro Ragebait',
+        [[style('Start', '0;30'), style(',ragebait @user', '0;97')], [style('Stop', '0;30'), style(',ragebait stop @user', '0;97')], [style('List', '0;30'), style(',ragebait list', '0;97')]],
+        [[style('Info', '0;30'), style('Mirror a user back to themselves.', '0;97')]]
+      ));
     }
 
-    // ---- STOP ALL ----
     if (args[0].toLowerCase() === 'stopall') {
-      if (activeMirrors.size === 0) {
-        const confirm = await message.channel.send(formatAnsiBlock([
-          style('[ RAGEBAIT ]', '1;30'),
-          '',
-          style('ERROR:', '1;31') + ' ' + style('No active ragebait sessions!', '0;97')
-        ]));
-        setTimeout(() => confirm.delete().catch(() => {}), 1000);
-        return;
-      }
-
-      for (const [userId, session] of activeMirrors) {
-        client.removeListener('messageCreate', session.listener);
-      }
-
       const count = activeMirrors.size;
+      activeMirrors.forEach((session) => client.removeListener('messageCreate', session.listener));
       activeMirrors.clear();
-
-      const confirm = await message.channel.send(formatAnsiBlock([
-        style('[ RAGEBAIT ]', '1;30'),
-        '',
-        style('RESULT:', '1;31') + ' ' + style('Stopped ' + count + ' ragebait session(s)!', '0;97')
-      ]));
-      setTimeout(() => confirm.delete().catch(() => {}), 1000);
-      return;
+      return message.channel.send(formatThreeBlock('Barro Ragebait', [[style('Result', '0;30'), style('Stopped all sessions.', '0;97')]], [[style('Count', '0;30'), style(String(count), '0;97')]]));
     }
 
-    // ---- LIST ----
     if (args[0].toLowerCase() === 'list') {
-      if (activeMirrors.size === 0) {
-        const confirm = await message.channel.send(formatAnsiBlock([
-          style('[ RAGEBAIT ]', '1;30'),
-          '',
-          style('ERROR:', '1;31') + ' ' + style('No active ragebait sessions!', '0;97')
-        ]));
-        setTimeout(() => confirm.delete().catch(() => {}), 1000);
-        return;
-      }
-
-      const lines = [
-        style('[ RAGEBAIT ]', '1;30'),
-        '',
-        style('LIST:', '1;31') + ' ' + style('Active Ragebait Sessions:', '0;97')
-      ];
-      for (const [userId, session] of activeMirrors) {
-        lines.push('  • <@' + userId + '> - ' + session.count + ' msgs mirrored');
-      }
-
-      const confirm = await message.channel.send(formatAnsiBlock(lines));
-      setTimeout(() => confirm.delete().catch(() => {}), 1000);
-      return;
+      const rows = [...activeMirrors.entries()].map(([userId, session]) => [style(`<@${userId}>`, '0;97'), style(`${session.count} msgs mirrored`, '0;97')]);
+      if (!rows.length) return message.channel.send(formatThreeBlock('Barro Ragebait', [[style('Sessions', '0;30'), style('0', '0;97')]], [[style('Result', '0;30'), style('No active ragebait sessions!', '0;97')]]));
+      return message.channel.send([formatAnsiBlock([style('Barro Ragebait', '0;30')]), formatAnsiBlock(rows.map(([l, r]) => style(l, '0;97') + style(' | ', '0;34') + r)), formatAnsiBlock([style('Result', '0;30'), style(`${rows.length} active session(s)`, '0;97')])].join('\n'));
     }
 
-    // ---- STOP SPECIFIC USER ----
     if (args[0].toLowerCase() === 'stop') {
-      let targetId;
-      const mentioned = message.mentions.users.first();
-      if (mentioned) {
-        targetId = mentioned.id;
-      } else if (args[1]) {
-        targetId = args[1];
-      }
-
-      if (!targetId) {
-        const confirm = await message.channel.send(formatAnsiBlock([
-          style('[ RAGEBAIT ]', '1;30'),
-          '',
-          style('ERROR:', '1;31') + ' ' + style('Usage: ,ragebait stop @user', '0;97')
-        ]));
-        setTimeout(() => confirm.delete().catch(() => {}), 1000);
-        return;
-      }
-
-      if (!activeMirrors.has(targetId)) {
-        const confirm = await message.channel.send(formatAnsiBlock([
-          style('[ RAGEBAIT ]', '1;30'),
-          '',
-          style('ERROR:', '1;31') + ' ' + style('No active ragebait session for that user!', '0;97')
-        ]));
-        setTimeout(() => confirm.delete().catch(() => {}), 1000);
-        return;
-      }
-
-      const session = activeMirrors.get(targetId);
+      const target = message.mentions.users.first() || (args[1] ? await client.users.fetch(args[1]).catch(() => null) : null);
+      if (!target) return message.channel.send(formatThreeBlock('Barro Ragebait', [[style('Target', '0;30'), style('Unknown', '0;97')]], [[style('Result', '0;30'), style('Usage: ,ragebait stop @user', '0;97')]]));
+      const session = activeMirrors.get(target.id);
+      if (!session) return message.channel.send(formatThreeBlock('Barro Ragebait', [[style('Target', '0;30'), style(target.username, '0;97')]], [[style('Result', '0;30'), style('No active ragebait session for that user!', '0;97')]]));
       client.removeListener('messageCreate', session.listener);
-      activeMirrors.delete(targetId);
-
-      const confirm = await message.channel.send(formatAnsiBlock([
-        style('[ RAGEBAIT ]', '1;30'),
-        '',
-        style('RESULT:', '1;31') + ' ' + style('Ragebait session stopped!', '0;97'),
-        style('DETAILS:', '1;31') + ' ' + style('Mirrored ' + session.count + ' messages total.', '0;97')
-      ]));
-      setTimeout(() => confirm.delete().catch(() => {}), 1000);
-      return;
+      activeMirrors.delete(target.id);
+      return message.channel.send(formatThreeBlock('Barro Ragebait', [[style('Target', '0;30'), style(target.username, '0;97')], [style('Count', '0;30'), style(String(session.count), '0;97')]], [[style('Result', '0;30'), style('Ragebait session stopped!', '0;97')]]));
     }
 
-    // ---- START ----
     let targetUser;
     try {
-      const mentioned = message.mentions.users.first();
-      if (mentioned) {
-        targetUser = mentioned;
-      } else {
-        targetUser = await client.users.fetch(args[0]);
-      }
+      targetUser = message.mentions.users.first() || await client.users.fetch(args[0]);
     } catch {
-      const confirm = await message.channel.send(formatAnsiBlock([
-        style('[ RAGEBAIT ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style('Could not find that user!', '0;97')
-      ]));
-      setTimeout(() => confirm.delete().catch(() => {}), 1000);
-      return;
+      return message.channel.send(formatThreeBlock('Barro Ragebait', [[style('Target', '0;30'), style('Unknown', '0;97')]], [[style('Result', '0;30'), style('Could not find that user!', '0;97')]]));
     }
 
     if (targetUser.id === client.user.id) {
-      const confirm = await message.channel.send(formatAnsiBlock([
-        style('[ RAGEBAIT ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style('Cannot ragebait yourself!', '0;97')
-      ]));
-      setTimeout(() => confirm.delete().catch(() => {}), 1000);
-      return;
+      return message.channel.send(formatThreeBlock('Barro Ragebait', [[style('Target', '0;30'), style(targetUser.username, '0;97')]], [[style('Result', '0;30'), style('Cannot ragebait yourself!', '0;97')]]));
     }
-
     if (activeMirrors.has(targetUser.id)) {
-      const confirm = await message.channel.send(formatAnsiBlock([
-        style('[ RAGEBAIT ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style('Already ragebaiting ' + targetUser.username + '!', '0;97'),
-        style('INFO:', '1;31') + ' ' + style('Use ,ragebait stop @' + targetUser.username + ' first.', '0;97')
-      ]));
-      setTimeout(() => confirm.delete().catch(() => {}), 1000);
-      return;
+      return message.channel.send(formatThreeBlock('Barro Ragebait', [[style('Target', '0;30'), style(targetUser.username, '0;97')]], [[style('Result', '0;30'), style('Already active for that user!', '0;97')]]));
     }
 
-    // Send start confirmation
-    const confirm = await message.channel.send(formatAnsiBlock([
-      style('[ RAGEBAIT ]', '1;30'),
-      '',
-      style('RESULT:', '1;31') + ' ' + style('Ragebait started on ' + targetUser.username + '!', '0;97'),
-      style('INFO:', '1;31') + ' ' + style('Every message they send will be replied back to them.', '0;97'),
-      style('INFO:', '1;31') + ' ' + style('Use ,ragebait stop ' + targetUser.id + ' to stop.', '0;97')
-    ]));
-    setTimeout(() => confirm.delete().catch(() => {}), 1000);
-
-    // Create session object
-    const session = {
-      count: 0,
-      listener: null,
-      // Per-session reply throttle (1000ms = 1 reply/second max).
-      lastReplyAt: 0,
-      replyCooldownMs: 1000,
-    };
-
-    // Message listener
-    const messageListener = async (msg) => {
+    const session = { count: 0, listener: null, lastReplyAt: 0, replyCooldownMs: 1000 };
+    const listener = async (msg) => {
       try {
-        if (msg.author.id !== targetUser.id) return;
-        if (msg.author.id === client.user.id) return;
-        if (msg.author.bot) return;
-        if (msg.content.startsWith(client.prefix)) return;
-
-        if (!activeMirrors.has(targetUser.id)) {
-          client.removeListener('messageCreate', messageListener);
-          return;
-        }
-
-        // ---- Per-session throttle: drop mirror replies that arrive before
-        // the cooldown elapses. Mirroring at the sender's full send rate is
-        // what makes ragebait look like a selfbot.
-        const now = Date.now();
-        if (now - session.lastReplyAt < session.replyCooldownMs) {
-          return;
-        }
-        session.lastReplyAt = now;
-
+        if (msg.author.id !== targetUser.id || msg.author.bot || msg.content.startsWith(client.prefix)) return;
+        if (Date.now() - session.lastReplyAt < session.replyCooldownMs) return;
+        session.lastReplyAt = Date.now();
         const content = msg.content || '';
-        const files = msg.attachments.size > 0
-          ? [...msg.attachments.values()].map(a => a.url)
-          : [];
-
+        const files = msg.attachments.size > 0 ? [...msg.attachments.values()].map(a => a.url) : [];
         if (!content && files.length === 0) return;
-
-        let mirrorContent = '';
-        if (content) mirrorContent += content;
-        if (files.length > 0) {
-          mirrorContent += (mirrorContent ? '\n' : '') + files.join('\n');
-        }
-
-        await msg.reply({
-          content: mirrorContent,
-          allowedMentions: { repliedUser: true }
-        });
-
+        let mirrorContent = content;
+        if (files.length) mirrorContent += (mirrorContent ? '\n' : '') + files.join('\n');
+        await msg.reply({ content: mirrorContent, allowedMentions: { repliedUser: true } });
         session.count++;
-        activeMirrors.get(targetUser.id).count = session.count;
-
-      } catch (err) {
-        // Silently fail
-      }
+      } catch {}
     };
-
-    session.listener = messageListener;
+    session.listener = listener;
     activeMirrors.set(targetUser.id, session);
-    client.on('messageCreate', messageListener);
+    client.on('messageCreate', listener);
+
+    return message.channel.send(formatThreeBlock('Barro Ragebait',
+      [[style('Target', '0;30'), style(targetUser.username, '0;97')], [style('Status', '0;30'), style('ACTIVE', '0;97')]],
+      [[style('Result', '0;30'), style('Every message they send will be replied back to them.', '0;97')]]
+    ));
   }
 };
 
-function style(text, colorCode) {
-  return `\u001b[${colorCode}m${text}\u001b[0m`;
-}
-
-function formatAnsiBlock(lines) {
-  return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+function style(text, colorCode) { return `\u001b[${colorCode}m${text}\u001b[0m`; }
+function formatAnsiBlock(lines) { return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n'); }
+function formatThreeBlock(title, block2Rows, block3Rows) {
+  const clean = (value) => String(value).replace(/\u001b\[[0-9;]*m/g, '');
+  const width = [...block2Rows, ...block3Rows].reduce((max, [label]) => Math.max(max, clean(label).length), 0);
+  const renderRows = (rows) => rows.map(([label, value]) => {
+    const left = clean(label).padEnd(width, ' ');
+    return style(left, '0;97') + style(' | ', '0;30') + style(clean(value), '0;34');
+  });
+  return [formatAnsiBlock([style(title, '0;30')]), formatAnsiBlock(renderRows(block2Rows)), formatAnsiBlock(renderRows(block3Rows))].join('\n');
 }

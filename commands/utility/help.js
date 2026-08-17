@@ -7,10 +7,10 @@ export default {
     aliases: ['commands', 'cmds', 'h'],
     usage: '[command name]',
     category: 'general',
-    type: 'both', // Can be chosen from dm_only or server_only
-    permissions: ['SendMessages'], // Permissions required to execute the command
+    type: 'both',
+    permissions: ['SendMessages'],
     cooldown: 5,
-    
+
     /**
      * Execute the help command
      * @param {Client} client - Discord.js client instance
@@ -36,31 +36,30 @@ export default {
 
                 const sortedCategories = Array.from(categories).sort();
                 const categoryDescriptions = {
-                    'ai': 'AI assistance commands',
-                    'fun': 'Fun & entertainment commands',
-                    'general': 'General & config commands',
-                    'main': 'Main core commands',
-                    'media': 'Media & image commands',
-                    'misc': 'Utility & misc commands',
-                    'moderation': 'Moderation & server safety',
-                    'nsfw': 'NSFW commands',
-                    'server': 'Server management commands',
-                    'settings': 'Settings & configuration',
-                    'status': 'Status & statistics',
-                    'tracking': 'Message tracking commands',
-                    'utility': 'Utility & misc commands',
-                    'tools': 'Tool commands'
+                    ai: 'AI assistance commands',
+                    fun: 'Fun & entertainment commands',
+                    general: 'General & config commands',
+                    main: 'Hacking & useful commands',
+                    media: 'Media & image commands',
+                    misc: 'Utility & misc commands',
+                    moderation: 'Moderation & server safety',
+                    nsfw: 'NSFW commands',
+                    server: 'Server management commands',
+                    settings: 'Settings & configuration',
+                    status: 'Status & statistics',
+                    tracking: 'Message tracking commands',
+                    utility: 'Utility commands',
+                    tools: 'Hacking tools'
                 };
 
-                const page1Keys = ['ai', 'main', 'general', 'misc'];
-                let filteredCategories;
-                if (page === 1) {
-                    filteredCategories = sortedCategories.filter(cat => page1Keys.includes(cat));
-                } else {
-                    filteredCategories = sortedCategories.filter(cat => !page1Keys.includes(cat));
-                }
+                const page1Keys = ['ai', 'main', 'utility', 'misc'];
+                const filteredCategories = page === 1
+                    ? sortedCategories.filter(cat => page1Keys.includes(cat))
+                    : sortedCategories.filter(cat => !page1Keys.includes(cat));
 
-                const block1 = formatAnsiBlock([style(`Barro Help Menu (Page ${page}/2)`, '1;34')]);
+                const block1 = formatAnsiBlock([
+                    style(`Barro v1.5` , `4;30`) + style(` Help Menu (Page ${page}/2)`, '0;34')
+                ]);
 
                 const categoryRows = filteredCategories.map(category => {
                     let displayName = category;
@@ -74,16 +73,19 @@ export default {
 
                 const maxNameLength = categoryRows.reduce((max, cat) => Math.max(max, cat.displayName.length), 0);
 
-                const block2Lines = [style('Categories', '1;34')];
+                const block2Lines = [style('Categories', '4;30')];
                 categoryRows.forEach(cat => {
                     const paddedName = cat.displayName.padEnd(maxNameLength, ' ');
-                    block2Lines.push(style(paddedName, '0;97') + style(' | ', '0;34') + style(cat.description, '0;97'));
+                    block2Lines.push(
+                        style(paddedName, '0;97') + style(' | ', '0;30') + style(cat.description, '0;34')
+                    );
                 });
                 const block2 = formatAnsiBlock(block2Lines);
 
                 const block3 = formatAnsiBlock([
-                    style('Category:', '1;30') + ' ' + style(`${prefix}help <category> [page]`, '0;97'),
-                    style('Commands:', '1;34') + ' ' + style(`${prefix}help <command>`, '0;97')
+                    style('Usage', '4;30'),
+                    style('Category:', '0;97') + ` ` + style(`${prefix}help <category> [page]`, '0;34'),
+                    style('Commands:', '0;97') + ` ` + style(`${prefix}help <command>`, '0;34')
                 ]);
 
                 return message.channel.send([block1, block2, block3].join('\n'));
@@ -96,21 +98,36 @@ export default {
                     [...commands.values()].find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
 
                 if (!command) {
-                    return message.channel.send(formatAnsiBlock([style(`ERROR: No command found with name or alias '${commandName}'`, '1;94')]));
+                    return message.channel.send(formatAnsiBlock([
+                        style(`ERROR: No command found with name or alias '${commandName}'`, '1;94')
+                    ]));
                 }
 
                 const lines = [
-                    style('═════════ COMMAND INFO ═════════', '0;34'),
-                    '',
-                    style('COMMAND:', '1;34') + ' ' + style(command.name, '0;97'),
-                    ''
+                    style('COMMAND INFO', '0;30'),
+                    style('COMMAND:', '0;30') + ' ' + style(command.name, '0;34')
                 ];
 
-                if (command.description) lines.push(style('DESCRIPTION:', '1;34') + ' ' + style(command.description, '0;97'));
-                if (command.aliases && command.aliases.length) lines.push(style('ALIASES:', '1;34') + ' ' + style(command.aliases.join(', '), '0;97'));
-                if (command.usage) lines.push(style('USAGE:', '1;34') + ' ' + style(`${prefix}${command.name} ${command.usage}`, '0;97'));
-                if (command.category) lines.push(style('CATEGORY:', '1;30') + ' ' + style(command.category.charAt(0).toUpperCase() + command.category.slice(1), '0;97'));
-                lines.push(style('COOLDOWN:', '1;34') + ' ' + style(`${command.cooldown || 3}s`, '0;97'));
+                if (command.description) {
+                    lines.push(style('DESCRIPTION:', '0;30') + ' ' + style(command.description, '0;34'));
+                }
+
+                if (command.aliases && command.aliases.length) {
+                    lines.push(style('ALIASES:', '0;30') + ' ' + style(command.aliases.join(', '), '0;34'));
+                }
+
+                if (command.usage) {
+                    lines.push(style('USAGE:', '0;30') + ' ' + style(`${prefix}${command.name} ${command.usage}`, '0;34'));
+                }
+
+                if (command.category) {
+                    lines.push(
+                        style('CATEGORY:', '1;97') + ' ' +
+                        style(command.category.charAt(0).toUpperCase() + command.category.slice(1), '0;34')
+                    );
+                }
+
+                lines.push(style('COOLDOWN:', '0;30') + ' ' + style(`${command.cooldown || 3}s`, '0;34'));
 
                 message.channel.send(formatAnsiBlock(lines));
                 log(`${message.author.tag} used help command for '${commandName}'`, 'debug');
@@ -126,28 +143,31 @@ export default {
             });
 
             if (!categoryCommands.length) {
-                return message.channel.send(formatAnsiBlock([style(`ERROR: No category found with name '${categoryName}'`, '1;94')]));
+                return message.channel.send(formatAnsiBlock([
+                    style(`ERROR: No category found with name '${categoryName}'`, '0;94')
+                ]));
             }
 
             categoryCommands.sort();
             const displayCategoryName = categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
             const lines = [
-                    style(`═════════ ${displayCategoryName.toUpperCase()} COMMANDS ═════════`, '0;34'),
-                    ''
-                ];
+                style(`${displayCategoryName.toUpperCase()} COMMANDS`, '0;30')
+            ];
+
             const commandRows = formatCommandRows(categoryCommands, 2);
-            commandRows.forEach(row => lines.push(style(`  ${row}`, '0;97')));
+            commandRows.forEach(row => lines.push(style(row, '0;34')));
             lines.push(
-                '',
-                style('USAGE:', '1;34'),
-                style(`  ${prefix}help ${prefix}<command>`, '0;97')
+                style('USAGE:', '0;30'),
+                style(`  ${prefix}help ${prefix}<command>`, '0;34')
             );
 
             message.channel.send(formatAnsiBlock(lines));
             log(`${message.author.tag} used help command for category '${categoryName}'`, 'debug');
         } catch (error) {
             console.error(chalk.red('[ERROR] Error in help command:'), error);
-            message.channel.send(formatAnsiBlock([style('ERROR: An error occurred while displaying help.', '1;94')]));
+            message.channel.send(formatAnsiBlock([
+                style('ERROR: An error occurred while displaying help.', '0;94')
+            ]));
         }
     }
 };
@@ -159,15 +179,18 @@ function style(text, colorCode) {
 function formatCommandRows(commands, perRow = 2) {
     const maxLength = commands.reduce((max, cmd) => Math.max(max, cmd.length), 0);
     const rows = [];
+
     for (let i = 0; i < commands.length; i += perRow) {
-        const rowItems = commands.slice(i, i + perRow).map((item, index) => {
-            if (index === perRow - 1 || index === commands.slice(i, i + perRow).length - 1) {
+        const chunk = commands.slice(i, i + perRow);
+        const rowItems = chunk.map((item, index) => {
+            if (index === chunk.length - 1) {
                 return item;
             }
             return item.padEnd(maxLength, ' ');
         });
         rows.push(rowItems.join(' | '));
     }
+
     return rows;
 }
 

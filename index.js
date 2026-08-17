@@ -4,6 +4,7 @@ import figlet from "figlet";
 import gradient from "gradient-string";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
+import readline from "readline";
 
 import { loadEvents } from "./handlers/EventsHandler.js";
 import { loadCommands } from "./handlers/CommandHandler.js";
@@ -11,10 +12,30 @@ import { setupAntiCrash } from "./handlers/anticrash.js";
 import { setupRateLimit } from "./handlers/RateLimitHandler.js";
 import { loadConfig, clearConsole, log, wait } from "./utils/functions.js";
 import TaskManager from "./utils/TaskManager.js";
-import { initNitroSniper } from "./commands/general/nitrosniper.js";
+import { initNitroSniper } from "./commands/fun/nitrosniper.js";
 
 let isShuttingDown = false;
 let client = null;
+let isLoggedIn = false;
+let logoutCooldownTimer = 0;
+let logoutCooldownActive = false;
+
+// ============================================
+// STYLING & FORMATTING HELPERS
+// ============================================
+
+function style(text, colorCode) {
+  return `\u001b[${colorCode}m${text}\u001b[0m`;
+}
+
+function displaySimpleMenu() {
+  console.log('\n' + style('Available Commands:', '0;36'));
+  console.log(style('login', '1;37') + '    | Start the bot');
+  console.log(style('logout', '1;37') + '   | Turn the bot off');
+  console.log(style('restart', '1;37') + '  | Restart the bot');
+  console.log(style('status', '1;37') + '   | Check the status of bot');
+  console.log(style('exit', '1;37') + '     | Exit the terminal\n');
+}
 
 // ============================================
 // TRACKING HELPER FUNCTIONS
@@ -42,31 +63,10 @@ function setupTracking(client) {
   const NAME_PATH = resolve('./data/namehistory.json');
   const BANNER_PATH = resolve('./data/bannerhistory.json');
 
-  // Friends allowlist: only track profile changes for users we are actually
-  // friends with (and any explicit special_users from config). Tracking
-  // randoms from shared guilds is what makes a selfbot look like a stalker
-  // account and is one of the patterns Discord's automated systems flag.
-  const isTrackedUser = (userId) => {
-    try {
-      const rel = client.relationships?.cache?.get(userId);
-      if (rel && rel.type === 'FRIEND') return true;
-    } catch {}
-    try {
-      const special = client.config?.relationship_logs?.special_users;
-      if (Array.isArray(special) && special.includes(userId)) return true;
-    } catch {}
-    return false;
-  };
-
   client.on('userUpdate', async (oldUser, newUser) => {
     try {
-      // Only act on friend/profile changes. Skip randoms, mutual guild
-      // members, blocked users, etc.
-      if (!isTrackedUser(newUser.id)) {
-        return;
-      }
-
       // Fetch full profile to get banner
+      let fullOldUser = oldUser;
       let fullNewUser = newUser;
 
       try {
@@ -141,7 +141,7 @@ function setupTracking(client) {
     }
   });
 
-  log('PFP, username and banner tracking initialized (friends-only)', 'debug');
+  log('PFP, username and banner tracking initialized', 'debug');
 }
 
 // ============================================
@@ -208,39 +208,242 @@ function validateToken(token) {
 }
 
 // ============================================
+// BOT CONTROL FUNCTIONS
+// ============================================
+
+function startLogoutCooldown() {
+  logoutCooldownActive = true;
+  logoutCooldownTimer = 60;
+
+  const countdownInterval = setInterval(() => {
+    logoutCooldownTimer--;
+    if (logoutCooldownTimer % 10 === 0 || logoutCooldownTimer <= 5) {
+      console.log(style(`Auto-login available in ${logoutCooldownTimer}s...`, '0;33'));
+    }
+
+    if (logoutCooldownTimer <= 0) {
+      clearInterval(countdownInterval);
+      logoutCooldownActive = false;
+      console.log(style('Ready to login again', '0;32'));
+    }
+  }, 1000);
+}
+
+function getLogoutStatus() {
+  if (!logoutCooldownActive) return null;
+  return logoutCooldownTimer;
+}
+
+async function loginBot(discordClient, config) {
+  if (isLoggedIn) {
+    console.log(style('Already connected to Discord', '1;33'));
+    return;
+  }
+
+  if (logoutCooldownActive) {
+    console.log(style(`Login blocked for ${logoutCooldownTimer}s to avoid rate limiting...`, '1;33'));
+    console.log(style('Waiting before auto-login...', '0;36'));
+    
+    // Wait for cooldown to finish
+    while (logoutCooldownTimer > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    console.log(style('Cooldown expired, proceeding with login...', '0;32'));
+  }
+
+  try {
+    console.log(style('Connecting to Discord...', '0;36'));
+    await discordClient.login(config.selfbot.token);
+    isLoggedIn = true;
+    console.log(style('Connected successfully', '0;32'));
+
+    if (config.nitro_sniper?.enabled !== false) {
+      try {
+        initNitroSniper(discordClient);
+        log("Nitro sniper initialized", "debug");
+      } catch (err) {
+        log(`Warning: Failed to initialize Nitro sniper: ${err.message}`, "warn");
+      }
+    }
+  } catch (err) {
+    isLoggedIn = false;
+    console.log(style(`Connection failed: ${err.message}`, '1;31'));
+  }
+}
+
+async function logoutBot(discordClient, config) {
+  if (!isLoggedIn) {
+    console.log(style('Not connected to Discord', '1;33'));
+    return;
+  }
+
+  try {
+    console.log(style('Disconnecting from Discord...', '0;36'));
+    await discordClient.destroy();
+    isLoggedIn = false;
+
+    // Simulate human-like slow shutdown (5-15 seconds)
+    const shutdownTime = Math.random() * 10 + 5; // 5-15 seconds
+    console.log(style(`Cleaning up (${Math.round(shutdownTime)}s)...`, '0;33'));
+
+    await new Promise(r => setTimeout(r, shutdownTime * 1000));
+    
+    console.log(style('Disconnected successfully', '0;32'));
+    
+    // Start cooldown timer
+    startLogoutCooldown();
+
+    // Reinitialize client for next login
+    discordClient = new Client({
+      checkUpdate: false,
+      autoRedeemNitro: true,
+      relationshipSweepInterval: 60,
+      restRequestTimeout: 60000,
+      ws: {
+        properties: {
+          $browser: config.client_properties?.browser || "Discord Client",
+        },
+      },
+    });
+
+    discordClient.config = config;
+    discordClient.prefix = config.selfbot.prefix;
+    discordClient.noprefix = false;
+    discordClient.commands = new Map();
+    discordClient.cooldowns = new Map();
+
+    setupAntiCrash(discordClient);
+    setupRateLimit(discordClient);
+
+    client = discordClient;
+  } catch (err) {
+    console.log(style(`Disconnect failed: ${err.message}`, '1;31'));
+  }
+}
+
+async function restartBot(discordClient, config) {
+  console.log(style('Restarting bot...', '0;36'));
+  await logoutBot(discordClient, config);
+  
+  // Wait for cooldown
+  while (logoutCooldownTimer > 0) {
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  
+  await loginBot(discordClient, config);
+}
+
+// ============================================
+// TERMINAL INTERFACE SETUP
+// ============================================
+
+function setupTerminalInterface(discordClient, config) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  displaySimpleMenu();
+
+  const prompt = () => {
+    rl.question(style('> ', '0;36'), async (input) => {
+      const command = input.trim().toLowerCase();
+
+      switch (command) {
+        case 'login':
+          await loginBot(discordClient, config);
+          break;
+
+        case 'logout':
+          await logoutBot(discordClient, config);
+          break;
+
+        case 'restart':
+          await restartBot(discordClient, config);
+          break;
+
+        case 'status':
+          console.log('');
+          if (isLoggedIn) {
+            console.log(style('Status: ', '0;36') + style('Connected', '0;32'));
+            console.log(style('Account: ', '0;36') + (discordClient.user?.username || 'Unknown'));
+            console.log(style('Prefix: ', '0;36') + config.selfbot.prefix);
+          } else {
+            console.log(style('Status: ', '0;36') + style('Disconnected', '1;31'));
+            if (logoutCooldownActive) {
+              console.log(style('Cooldown: ', '0;36') + `${logoutCooldownTimer}s remaining`);
+            }
+          }
+          console.log('');
+          break;
+
+        case 'exit':
+          console.log(style('Exiting...', '0;33'));
+          await gracefulShutdown('USER_COMMAND', 0, rl);
+          return;
+
+        case 'help':
+          displaySimpleMenu();
+          prompt();
+          return;
+
+        case '':
+          prompt();
+          return;
+
+        default:
+          console.log(style('Unknown command. Type "help" for available commands.', '1;31'));
+          break;
+      }
+
+      prompt();
+    });
+  };
+
+  prompt();
+}
+
+async function gracefulShutdown(signal, exitCode = 0, rl = null) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  log(`\nReceived ${signal} signal, shutting down...`, "warn");
+
+  try {
+    if (rl) {
+      rl.close();
+    }
+    await TaskManager.cleanup();
+    if (client?.destroy) {
+      await client.destroy();
+    }
+    log("Shutdown completed", "success");
+  } catch (error) {
+    log(`Error during shutdown: ${error.message}`, "error");
+    exitCode = 1;
+  } finally {
+    setTimeout(() => process.exit(exitCode), 100);
+  }
+}
+
+// ============================================
 // SIGNAL HANDLERS
 // ============================================
 
 function setupSignalHandlers(discordClient) {
-  const gracefulShutdown = async (signal, exitCode = 0) => {
-    if (isShuttingDown) return;
-    isShuttingDown = true;
-    log(`\nReceived ${signal} signal, shutting down...`, "warn");
-
-    try {
-      await TaskManager.cleanup();
-      if (discordClient?.destroy) {
-        discordClient.destroy();
-      }
-      log("Shutdown completed", "success");
-    } catch (error) {
-      log(`Error during shutdown: ${error.message}`, "error");
-      exitCode = 1;
-    } finally {
-      setTimeout(() => process.exit(exitCode), 100);
-    }
+  const handleSignal = async (signal, exitCode = 0) => {
+    await gracefulShutdown(signal, exitCode);
   };
 
-  process.on("SIGINT", () => gracefulShutdown("SIGINT", 0));
-  process.on("SIGTERM", () => gracefulShutdown("SIGTERM", 0));
-  process.on("SIGQUIT", () => gracefulShutdown("SIGQUIT", 0));
+  process.on("SIGINT", () => handleSignal("SIGINT", 0));
+  process.on("SIGTERM", () => handleSignal("SIGTERM", 0));
+  process.on("SIGQUIT", () => handleSignal("SIGQUIT", 0));
   process.on("uncaughtException", (error) => {
     log(`Uncaught Exception: ${error.message}`, "error");
-    gracefulShutdown("UNCAUGHT_EXCEPTION", 1);
+    handleSignal("UNCAUGHT_EXCEPTION", 1);
   });
   process.on("unhandledRejection", (reason) => {
     log(`Unhandled Rejection: ${reason}`, "error");
-    gracefulShutdown("UNHANDLED_REJECTION", 1);
+    handleSignal("UNHANDLED_REJECTION", 1);
   });
 }
 
@@ -252,15 +455,6 @@ async function initializeSelfbot() {
   try {
     log("Loading configuration...", "info");
     const config = loadConfig();
-
-    // Prefer the token from DISCORD_TOKEN environment variable over config.yaml.
-    // A leaked config.yaml leaks your account; an env-var token is bound to the
-    // current process and is not committed to source control.
-    const envToken = process.env.DISCORD_TOKEN || process.env.SELFBOT_TOKEN;
-    if (envToken) {
-      config.selfbot.token = envToken;
-      log("Token loaded from environment variable", "debug");
-    }
 
     log("Validating Discord token...", "info");
     const tokenValidation = validateToken(config.selfbot?.token);
@@ -274,10 +468,13 @@ async function initializeSelfbot() {
     client = new Client({
       checkUpdate: false,
       autoRedeemNitro: true,
-      relationshipSweepInterval: 3600,
+      relationshipSweepInterval: 60,
       restRequestTimeout: 60000,
-      // No ws.properties override — let the library send the real desktop
-      // fingerprint instead of a mismatched mobile user-agent from Windows.
+      ws: {
+        properties: {
+          $browser: config.client_properties?.browser || "Discord Client",
+        },
+      },
     });
 
     client.config = config;
@@ -313,33 +510,21 @@ async function initializeSelfbot() {
 
     displayBanner();
 
-    log("Connecting to Discord...", "info");
+    // Don't auto-login - wait for user command instead
+    console.log(style('\nBot initialized and ready', '0;36'));
 
-    try {
-      await client.login(config.selfbot.token);
-      log("Successfully connected to Discord!", "success");
-    } catch (loginError) {
-      if (loginError.message.includes("TOKEN_INVALID")) {
-        console.error(chalk.red("\n[LOGIN ERROR] Invalid Discord token"));
-      } else if (loginError.message.includes("RATE_LIMITED")) {
-        console.error(chalk.red("\n[LOGIN ERROR] Rate limited by Discord"));
-      } else {
-        console.error(chalk.red("\n[LOGIN ERROR] " + loginError.message));
-      }
-      process.exit(1);
-    }
+    isLoggedIn = false;
 
-    // Step 9: Initialize additional features
+    // Step 9: Initialize additional features (but don't start them yet)
     log("Initializing additional features...", "debug");
 
     try {
-      // Initialize Nitro sniper if enabled
+      // Initialize Nitro sniper if enabled (but don't activate until logged in)
       if (config.nitro_sniper?.enabled !== false) {
-        initNitroSniper(client);
-        log("Nitro sniper initialized", "debug");
+        log("Nitro sniper ready (will activate on login)", "debug");
       }
 
-      // ✅ START TRACKING PFP, USERNAME AND BANNER
+      // ✅ START TRACKING PFP, USERNAME AND BANNER (will work after login)
       setupTracking(client);
 
     } catch (featureError) {
@@ -347,8 +532,8 @@ async function initializeSelfbot() {
     }
 
     log("Selfbot initialization completed successfully!", "debug");
-    log(`Bot is ready with prefix: ${client.prefix}`, "debug");
 
+    return config;
   } catch (error) {
     console.error(chalk.red("\n[INITIALIZATION ERROR] " + error.message));
     if (error.stack) console.error(chalk.gray(error.stack));
@@ -360,7 +545,9 @@ async function initializeSelfbot() {
 }
 
 log("Starting Barro Selfbot...", "info");
-initializeSelfbot().catch((error) => {
+initializeSelfbot().then((config) => {
+  setupTerminalInterface(client, config);
+}).catch((error) => {
   console.error(chalk.red("\n[FATAL ERROR] " + error.message));
   process.exit(1);
 });

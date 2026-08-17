@@ -22,9 +22,9 @@ export default {
                     isGuildAvatar = true;
                 } else {
                     return message.channel.send(formatAnsiBlock([
-                      style('[ AVATAR ]', '1;30'),
+                      style(' Avatar ', '0;30'),
                       '',
-                      style('ERROR:', '1;31') + ' ' + style('This command can only fetch server avatars in a guild channel.', '0;97')
+                      style(' Error: ', '0;97') + ' ' + style('This command can only fetch server avatars in a guild channel.', '0;34')
                     ]));
                 }
             } else if (arg === 'bot' || arg === 'self') {
@@ -46,18 +46,18 @@ export default {
                             avatarName = `${target.username}'s`;
                         } else {
                             return message.channel.send(formatAnsiBlock([
-                              style('[ AVATAR ]', '1;30'),
+                              style(' Avatar ', '4;30'),
                               '',
-                              style('ERROR:', '1;31') + ' ' + style('Could not find a user with that ID.', '0;97'),
-                              style('USAGE:', '1;31') + ' ' + style(`${client.prefix}avatar [user mention/id | server | bot]`, '0;97')
+                              style(' Error: ', '0;97') + ' ' + style('Could not find a user with that ID.', '0;34'),
+                              style(' Usage: ', '0;97') + ' ' + style(`${client.prefix}avatar [user mention/id | server | bot]`, '0;34')
                             ]));
                         }
                     } catch (error) {
                         return message.channel.send(formatAnsiBlock([
-                          style('[ AVATAR ]', '1;30'),
+                          style(' Avatar ', '4;30'),
                           '',
-                          style('ERROR:', '1;31') + ' ' + style('Invalid argument or user not found.', '0;97'),
-                          style('USAGE:', '1;31') + ' ' + style(`${client.prefix}avatar [user mention/id | server | bot]`, '0;97')
+                          style(' Error: ', '0;97') + ' ' + style('Invalid argument or user not found.', '0;34'),
+                          style(' Usage: ', '0;97') + ' ' + style(`${client.prefix}avatar [user mention/id | server | bot]`, '0;34')
                         ]));
                     }
                 }
@@ -70,9 +70,9 @@ export default {
 
         if (!avatarURL) {
             return message.channel.send(formatAnsiBlock([
-              style('[ AVATAR ]', '1;30'),
+              style(' Avatar ', '4;30'),
               '',
-              style('INFO:', '1;31') + ' ' + style(`${avatarName} doesn't have an avatar.`, '0;97')
+              style(' Info: ', '0;97') + ' ' + style(`${avatarName} doesn't have an avatar.`, '0;34')
             ]));
         }
 

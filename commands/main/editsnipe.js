@@ -14,96 +14,58 @@ export default {
     try {
       if (message.author.id !== client.user.id) return;
 
-      // Determine which channel to snipe from
       let targetChannel = message.channel;
-
-      // If a channel ID is provided
       if (args[0] && !isNaN(args[0])) {
         const channel = client.channels.cache.get(args[0]);
-        if (channel) {
-          targetChannel = channel;
-        }
+        if (channel) targetChannel = channel;
       }
 
       const editedMessages = client._editedMessages || new Map();
-
-      log(
-        `Editsnipe command executed. Cache has ${editedMessages.size} entries.`,
-        "debug"
-      );
-      log(`Looking for messages in channel: ${targetChannel.id}`, "debug");
-
       const editedMessage = editedMessages.get(targetChannel.id);
 
       if (!editedMessage) {
-        return message.channel.send(formatAnsiBlock([
-          style('[ EDIT SNIPE ]', '1;30'),
-          '',
-          style('ERROR:', '1;31') + ' ' + style('No recently edited messages found here!', '0;97')
-        ]));
+        return message.channel.send(formatThreeBlock("Barro Editsnipe", [["Channel", targetChannel.id]], [["Result", "No recently edited messages found here!"]]));
       }
 
-      log(`Found edited message from ${editedMessage.author.tag}`, "debug");
-
-      const timestamp = new Date(editedMessage.timestamp).toLocaleString();
-
-      // Build editsnipe message
-      const lines = [
-        style('[ EDIT SNIPE ]', '1;30'),
-        '',
-        style('EDITED MESSAGE:', '1;31'),
-        '  Author: ' + (editedMessage.author.tag || 'Unknown'),
+      const rows = [
+        ["Author", editedMessage.author.tag || "Unknown"],
+        ["Channel", editedMessage.channelName || "DM/GC"],
+        ["Edited at", new Date(editedMessage.timestamp).toLocaleString()]
       ];
-
-      // Show channel differently based on type
-      if (editedMessage.channelName) {
-        lines.push('  Channel: ' + editedMessage.channelName);
-      } else {
-        lines.push('  Channel: DM/GC');
-      }
-
-      lines.push('  Edited at: ' + timestamp);
-
-      // Add message link only if in a server
       if (editedMessage.messageId && editedMessage.guildId) {
-        lines.push('  Message Link: https://discord.com/channels/' + editedMessage.guildId + '/' + targetChannel.id + '/' + editedMessage.messageId);
+        rows.push(["Message Link", `https://discord.com/channels/${editedMessage.guildId}/${targetChannel.id}/${editedMessage.messageId}`]);
       }
-
-      // Before content
       if (editedMessage.oldContent && editedMessage.oldContent.trim().length > 0) {
-        if (editedMessage.oldContent.length < 100) {
-          lines.push(style('Before:', '1;31') + ' ' + editedMessage.oldContent);
-        } else {
-          lines.push(style('Before:', '1;31'));
-          lines.push(...editedMessage.oldContent.split('\n'));
-        }
+        rows.push(["Before", editedMessage.oldContent.length < 100 ? editedMessage.oldContent : editedMessage.oldContent.replace(/\n/g, ' / ')]);
       } else {
-        lines.push(style('Before:', '1;31') + ' *No content*');
+        rows.push(["Before", "No content"]);
       }
-
-      // After content
       if (editedMessage.newContent && editedMessage.newContent.trim().length > 0) {
-        if (editedMessage.newContent.length < 100) {
-          lines.push(style('After:', '1;31') + ' ' + editedMessage.newContent);
-        } else {
-          lines.push(style('After:', '1;31'));
-          lines.push(...editedMessage.newContent.split('\n'));
-        }
+        rows.push(["After", editedMessage.newContent.length < 100 ? editedMessage.newContent : editedMessage.newContent.replace(/\n/g, ' / ')]);
       } else {
-        lines.push(style('After:', '1;31') + ' *No content*');
+        rows.push(["After", "No content"]);
       }
 
-      await message.channel.send(formatAnsiBlock(lines));
-
+      await message.channel.send(formatThreeBlock("Barro Editsnipe", [["Channel", targetChannel.id]], rows));
       log(`Sniped an edited message in ${targetChannel.id}`, "debug");
-
     } catch (error) {
       log(`Error in editsnipe command: ${error.message}`, "error");
-      message.channel.send(formatAnsiBlock([
-        style('[ EDIT SNIPE ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style(`Error: ${error.message}`, '0;97')
-      ]));
+      message.channel.send(formatThreeBlock("Barro Editsnipe", [["Status", "Error"]], [["Result", `Error: ${error.message}`]]));
     }
   },
 };
+
+function style(text, colorCode) {
+  return `\u001b[${colorCode}m${text}\u001b[0m`;
+}
+
+function formatAnsiBlock(lines) {
+  return ["> ```ansi", ...lines.map(line => `> ${line}`), "> ```"].join("\n");
+}
+
+function formatThreeBlock(title, block2Rows, block3Rows) {
+  const clean = (value) => String(value).replace(/\u001b\[[0-9;]*m/g, '');
+  const width = [...block2Rows, ...block3Rows].reduce((max, [label]) => Math.max(max, clean(label).length), 0);
+  const renderRows = (rows) => rows.map(([label, value]) => style(clean(label).padEnd(width, ' '), '0;97') + style(' | ', '0;30') + style(clean(value), '0;34'));
+  return [formatAnsiBlock([style(title, '0;30')]), formatAnsiBlock(renderRows(block2Rows)), formatAnsiBlock(renderRows(block3Rows))].join('\n');
+}

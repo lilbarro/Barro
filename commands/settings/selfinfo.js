@@ -18,9 +18,11 @@ export default {
     permissions: ['SendMessages'],
     cooldown: 10,
 
-    async execute(client, message, args) {
+        async execute(client, message, args) {
         try {
-            const statusMsg = await message.channel.send('> 📊 **Gathering selfbot information...**');
+            const statusMsg = await message.channel.send(formatAnsiBlock([
+                style(`Barro`, `4;30`) + style(` Info | Gathering data...`, '0;34')
+            ]));
             
             // Get system info
             const platform = os.platform();
@@ -61,40 +63,50 @@ export default {
             // Format platform name
             const platformName = this.formatPlatformName(platform);
             
-            // Create info message
-            const infoMessage = 
-                `> 🤖 **Barro Selfbot Information**\n\n` +
-                `> **⚡ Performance:**\n` +
-                `> • Latency: ${ping}ms\n` +
-                `> • Memory Usage: ${memoryMB.heapUsed}MB / ${memoryMB.heapTotal}MB\n` +
-                `> • CPU Usage: ~${cpuPercent}%\n` +
-                `> • Uptime: ${uptimeStr}\n\n` +
-                `> **🖥️ System:**\n` +
-                `> • Platform: ${platformName}\n` +
-                `> • Architecture: ${arch}\n` +
-                `> • Node.js: ${nodeVersion}\n\n` +
-                `> **📊 Statistics:**\n` +
-                `> • Commands: ${commandCount}\n` +
-                `> • Events: ${eventCount}\n` +
-                `> • Lines of Code: ${linesOfCode}\n\n` +
-                `> **👨‍💻 Developer:**\n` +
-                `> • Created by: [lilbarro](https://github.com/lilbarro)\n` +
-                `> • Source: [GitHub](https://github.com/lilbarro/Barro)\n\n` +
-                `> **🔧 Current Status:**\n` +
-                `> • Prefix: \`${client.prefix}\`\n` +
-                `> • User: ${client.user.tag}\n` +
-                `> • ID: ${client.user.id}`;
-            
-            await statusMsg.edit(infoMessage);
+            const block1 = formatAnsiBlock([
+                style(`Barro`, `4;30`) + style(` Selfbot Information`, '0;34')
+            ]);
+
+            const block2 = formatAnsiBlock([
+                style('Performance', '4;30'),
+                kv('Latency', `${ping}ms`, 12),
+                kv('Memory', `${memoryMB.heapUsed}MB / ${memoryMB.heapTotal}MB`, 12),
+                kv('CPU Usage', `~${cpuPercent}%`, 12),
+                kv('Uptime', uptimeStr, 12)
+            ]);
+
+            const block3 = formatAnsiBlock([
+                style('System', '4;30'),
+                kv('Platform', platformName, 12),
+                kv('Arch', arch, 12),
+                kv('Node.js', nodeVersion, 12)
+            ]);
+
+            const block4 = formatAnsiBlock([
+                style('Statistics', '4;30'),
+                kv('Commands', commandCount, 12),
+                kv('Events', eventCount, 12),
+                kv('Lines', linesOfCode, 12)
+            ]);
+
+            const block5 = formatAnsiBlock([
+                style('Identity', '4;30'),
+                kv('Prefix', client.prefix, 12),
+                kv('User', client.user.tag, 12),
+                kv('ID', client.user.id, 12)
+            ]);
+
+            await statusMsg.edit([block1, block2, block3, block4, block5].join('\n'));
             
         } catch (error) {
             log(`Error generating selfinfo: ${error.message}`, 'error');
-            await message.channel.send(
-                `> ❌ **Error generating selfbot info!**\n` +
-                `> **Error:** ${error.message}`
-            );
+            await message.channel.send(formatAnsiBlock([
+                style(`ERROR: Failed to generate info`, `1;94`),
+                style(error.message, '0;34')
+            ]));
         }
     },
+
 
     async getEventCount() {
         try {
@@ -183,7 +195,7 @@ export default {
         return count;
     },
 
-    formatPlatformName(platform) {
+        formatPlatformName(platform) {
         const platformMap = {
             'win32': 'Windows',
             'darwin': 'macOS',
@@ -196,3 +208,16 @@ export default {
         return platformMap[platform] || platform;
     }
 };
+
+function style(text, colorCode) {
+    return `\u001b[${colorCode}m${text}\u001b[0m`;
+}
+
+function formatAnsiBlock(lines) {
+    return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+}
+
+function kv(label, value, padTo) {
+    const padded = String(label).padEnd(padTo, ' ');
+    return style(padded, '0;97') + style(' | ', '0;30') + style(String(value), '0;34');
+}

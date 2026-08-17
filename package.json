@@ -1,37 +1,27 @@
 {
   "name": "Barro",
-  "version": "1.1.0",
-  "description": "An experimental open source multifunctional selfbot for discord",
+  "version": "1.5.0",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "dev": "node --inspect index.js",
-    "lint": "echo \"Checking code style...\" && node -c index.js && echo \"✅ Code syntax is valid!\""
-  },
-  "keywords": [],
-  "author": "github.com/lilbarro",
-  "license": "MIT",
   "type": "module",
   "dependencies": {
-    "@discordjs/voice": "^0.18.0",
-    "@upscalerjs/esrgan-thick": "^1.0.0-beta.16",
-    "axios": "^1.10.0",
-    "chalk": "^5.4.1",
-    "chalk-animation": "^2.0.3",
-    "cli-progress": "^3.12.0",
-    "cli-table3": "^0.6.5",
-    "debug": "^4.4.3",
-    "discord.js-selfbot-rpc": "^1.0.1",
-    "discord.js-selfbot-v13": "^3.7.0",
-    "figlet": "^1.8.2",
-    "gradient-string": "^3.0.0",
-    "groq-sdk": "^0.27.0",
-    "js-yaml": "^4.1.0",
-    "node-fetch": "^2.7.0",
-    "opusscript": "^0.0.8",
-    "ora": "^8.2.0",
-    "pixteroid": "^1.0.3",
-    "upscaler": "^1.0.0-beta.19"
+    "discord.js-selfbot-v13": "latest",
+    "chalk": "latest",
+    "figlet": "latest",
+    "gradient-string": "latest",
+    "electron": "^33.4.11"
+  },
+  "devDependencies": {
+    "electron-builder": "^25.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.barro.selfbot",
+    "productName": "Barro Bot Launcher",
+    "win": {
+      "target": "nsis"
+    }
   }
 }

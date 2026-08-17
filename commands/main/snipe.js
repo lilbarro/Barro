@@ -9,96 +9,52 @@ export default {
   type: "both",
   permissions: [],
   cooldown: 10,
-
   execute: async (client, message, args) => {
     try {
       if (message.author.id !== client.user.id) return;
-
       let targetChannel = message.channel;
-
-      // If a channel ID is provided
       if (args[0] && !isNaN(args[0])) {
         const channel = client.channels.cache.get(args[0]);
-        if (channel) {
-          targetChannel = channel;
-        }
+        if (channel) targetChannel = channel;
       }
 
       const deletedMessages = client._deletedMessages || new Map();
-
       if (!deletedMessages.has(targetChannel.id)) {
-        return message.channel.send(formatAnsiBlock([
-          style('[ SNIPE ]', '1;30'),
-          '',
-          style('ERROR:', '1;31') + ' ' + style('No recently deleted messages found here!', '0;97')
-        ]));
+        return message.channel.send(formatThreeBlock("Barro Snipe", [["Channel", targetChannel.id]], [["Result", "No recently deleted messages found here!"]]));
       }
 
       const deletedMessage = deletedMessages.get(targetChannel.id);
       const timestamp = new Date(deletedMessage.timestamp).toLocaleString();
-
-      const lines = [
-        style('[ SNIPE ]', '1;30'),
-        '',
-        style('DELETED MESSAGE:', '1;31'),
-        '  Author: ' + (deletedMessage.author.tag || 'Unknown'),
-        '  Channel: ' + (deletedMessage.channelName || 'DM/GC'),
-        '  Deleted at: ' + timestamp
+      const rows = [
+        ["Author", deletedMessage.author.tag || "Unknown"],
+        ["Channel", deletedMessage.channelName || "DM/GC"],
+        ["Deleted at", timestamp]
       ];
-
       if (deletedMessage.content && deletedMessage.content.trim().length > 0) {
-        if (deletedMessage.content.length < 100) {
-          lines.push(style('Content:', '1;31') + ' ' + deletedMessage.content);
-        } else {
-          lines.push(style('Content:', '1;31'));
-          lines.push(...deletedMessage.content.split('\n'));
-        }
+        rows.push(["Content", deletedMessage.content.length < 100 ? deletedMessage.content : deletedMessage.content.replace(/\n/g, ' / ')]);
       } else {
-        lines.push(style('Content:', '1;31') + ' *No text content*');
+        rows.push(["Content", "No text content"]);
+      }
+      if (deletedMessage.attachments && deletedMessage.attachments.length > 0) {
+        rows.push(["Attachments", String(deletedMessage.attachments.length)]);
       }
 
+      await message.channel.send(formatThreeBlock("Barro Snipe", [["Channel", targetChannel.id]], rows));
+
       if (deletedMessage.attachments && deletedMessage.attachments.length > 0) {
-        lines.push(style('Attachments:', '1;31'));
-        deletedMessage.attachments.forEach((att, index) => {
-          lines.push(`  ${index + 1}. ${att.name}: ${att.url}`);
-        });
-      }
-
-      await message.channel.send(formatAnsiBlock(lines));
-
-      // Send images separately
-      if (deletedMessage.attachments && deletedMessage.attachments.length > 0) {
-        const imageAttachments = deletedMessage.attachments.filter(
-          (att) => att.contentType && att.contentType.startsWith("image/")
-        );
-
+        const imageAttachments = deletedMessage.attachments.filter((att) => att.contentType && att.contentType.startsWith("image/"));
         if (imageAttachments.length > 0) {
-          await message.channel.send(formatAnsiBlock([
-            style('[ SNIPE ]', '1;30'),
-            '',
-            style('IMAGES:', '1;31') + ' ' + style('Deleted Images:', '0;97')
-          ]));
+          await message.channel.send(formatThreeBlock("Barro Snipe", [["Images", String(imageAttachments.length)]], [["Result", "Deleted images attached below."]]));
           const maxImages = Math.min(imageAttachments.length, 3);
-          for (let i = 0; i < maxImages; i++) {
-            await message.channel.send(imageAttachments[i].url);
-          }
+          for (let i = 0; i < maxImages; i++) await message.channel.send(imageAttachments[i].url);
           if (imageAttachments.length > maxImages) {
-            await message.channel.send(formatAnsiBlock([
-              style('[ SNIPE ]', '1;30'),
-              '',
-              style('INFO:', '1;31') + ' ' + style(`${imageAttachments.length - maxImages} more image(s) not shown`, '0;97')
-            ]));
+            await message.channel.send(formatThreeBlock("Barro Snipe", [["Images", String(imageAttachments.length)]], [["Result", `${imageAttachments.length - maxImages} more image(s) not shown`]]));
           }
         }
       }
-
     } catch (error) {
       log(`Error in snipe command: ${error.message}`, "error");
-      message.channel.send(formatAnsiBlock([
-        style('[ SNIPE ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style(`Error: ${error.message}`, '0;97')
-      ]));
+      message.channel.send(formatThreeBlock("Barro Snipe", [["Status", "Error"]], [["Result", `Error: ${error.message}`]]));
     }
   },
 };
@@ -108,5 +64,12 @@ function style(text, colorCode) {
 }
 
 function formatAnsiBlock(lines) {
-  return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+  return ["> ```ansi", ...lines.map(line => `> ${line}`), "> ```"].join("\n");
+}
+
+function formatThreeBlock(title, block2Rows, block3Rows) {
+  const clean = (value) => String(value).replace(/\u001b\[[0-9;]*m/g, '');
+  const width = [...block2Rows, ...block3Rows].reduce((max, [label]) => Math.max(max, clean(label).length), 0);
+  const renderRows = (rows) => rows.map(([label, value]) => style(clean(label).padEnd(width, ' '), '0;97') + style(' | ', '0;30') + style(clean(value), '0;34'));
+  return [formatAnsiBlock([style(title, '0;30')]), formatAnsiBlock(renderRows(block2Rows)), formatAnsiBlock(renderRows(block3Rows))].join('\n');
 }

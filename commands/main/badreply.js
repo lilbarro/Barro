@@ -1,10 +1,8 @@
 import { log, loadConfig } from "../../utils/functions.js";
 import TaskManager from "../../utils/TaskManager.js";
 
-// Store active bad reply sessions
 const badReplySessions = new Map();
 
-// Default bad replies (fallback if config is not available)
 const defaultBadReplies = [
   "You're such a pathetic loser, go touch some grass you basement dweller.",
   "Shut the hell up, nobody asked for your stupid opinion you moron.",
@@ -28,27 +26,15 @@ const defaultBadReplies = [
   "Nobody likes you, you're just an annoying pest that won't go away.",
 ];
 
-/**
- * Get bad replies from config or use defaults
- * @returns {Array} Array of bad reply phrases
- */
 function getBadReplies() {
   try {
     const config = loadConfig();
-
-    // Check if bad_phrases is configured and enabled
-    if (
-      config.bad_phrases &&
-      config.bad_phrases.enabled &&
-      config.bad_phrases.phrases &&
-      config.bad_phrases.phrases.length > 0
-    ) {
+    if (config.bad_phrases?.enabled && Array.isArray(config.bad_phrases?.phrases) && config.bad_phrases.phrases.length > 0) {
       log("Using bad phrases from config", "debug");
       return config.bad_phrases.phrases.slice(0, 30);
-    } else {
-      log("Using default bad phrases (config not found or disabled)", "debug");
-      return defaultBadReplies.slice(0, 30);
     }
+    log("Using default bad phrases (config not found or disabled)", "debug");
+    return defaultBadReplies.slice(0, 30);
   } catch (error) {
     log(`Error loading bad phrases from config: ${error.message}`, "warn");
     return defaultBadReplies.slice(0, 30);
@@ -67,283 +53,179 @@ export default {
 
   async execute(client, message, args) {
     if (!args.length) {
-      const lines = [
-        style('═════════ BADREPLY HELP ═════════', '0;30'),
-        '',
-        style('USAGE:', '1;31'),
-        style(`  ${client.prefix}badreply @user`, '0;97'),
-        style(`  ${client.prefix}badreply stop @user`, '0;97'),
-        style(`  ${client.prefix}badreply list`, '0;97'),
-      ];
-      return message.channel.send(formatAnsiBlock(lines));
+      return message.channel.send(formatThreeBlock(
+        "Barro v1.5 Badreply",
+        [
+          [style("Usage", "0;30"), style(`${client.prefix}badreply @user`, "0;97")],
+          [style("Stop", "0;30"), style(`${client.prefix}badreply stop @user`, "0;97")],
+          [style("List", "0;30"), style(`${client.prefix}badreply list`, "0;97")]
+        ],
+        [
+          [style("Info", "0;30"), style("Auto-reply with bad words to a specific user.", "0;97")]
+        ]
+      ));
     }
 
     const subcommand = args[0].toLowerCase();
-
-    // Handle subcommands
-    if (subcommand === "stop" || subcommand === "end") {
-      return this.stopBadReply(client, message, args.slice(1));
-    }
-
-    if (subcommand === "list" || subcommand === "active") {
-      return this.listActive(client, message);
-    }
-
-    // Default: start bad replying to a user
+    if (subcommand === "stop" || subcommand === "end") return this.stopBadReply(client, message, args.slice(1));
+    if (subcommand === "list" || subcommand === "active") return this.listActive(client, message);
     return this.startBadReply(client, message, args);
   },
 
   async startBadReply(client, message, args) {
     let targetUser = null;
-
-    // Parse user from mention or ID
     if (message.mentions.users.size > 0) {
       targetUser = message.mentions.users.first();
     } else if (args[0]) {
       try {
         const userId = args[0].replace(/[<@!>]/g, "");
-        if (/^\d+$/.test(userId)) {
-          targetUser = await client.users.fetch(userId);
-        }
-      } catch (error) {
-        return message.channel.send(formatAnsiBlock([style('> ❌ User not found! Please mention a valid user or provide a valid user ID.', '1;91')]));
+        if (/^\d+$/.test(userId)) targetUser = await client.users.fetch(userId);
+      } catch {
+        return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Target", "0;30"), style("Unknown", "0;97")]], [[style("Result", "0;30"), style("User not found.", "0;97")]]));
       }
     }
 
     if (!targetUser) {
-      return message.channel.send(formatAnsiBlock([style('> ❌ Please specify a user to bad reply to!', '1;91'), '', style(`Usage: ${client.prefix}badreply @user`, '0;97')]));
+      return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Target", "0;30"), style("Unknown", "0;97")]], [[style("Result", "0;30"), style(`Usage: ${client.prefix}badreply @user`, "0;97")]]));
     }
-
-    // Prevent self-targeting
     if (targetUser.id === message.author.id) {
-      return message.channel.send("🤡 **You can't bad reply to yourself!**");
+      return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Target", "0;30"), style(targetUser.username, "0;97")]], [[style("Result", "0;30"), style("You can't bad reply to yourself!", "0;97")]]));
     }
-
-    // Prevent targeting bots
     if (targetUser.bot) {
-      return message.channel.send(formatAnsiBlock([style('> 🤖 Cannot bad reply to bot accounts.', '1;91')]));
+      return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Target", "0;30"), style(targetUser.username, "0;97")]], [[style("Result", "0;30"), style("Cannot bad reply to bot accounts.", "0;97")]]));
     }
 
     const guildId = message.guild?.id || "dm";
     const sessionKey = `${targetUser.id}:${guildId}`;
-
-    // Check if user is already being bad replied to
     if (badReplySessions.has(sessionKey)) {
-      return message.channel.send(
-        `💀 **${targetUser.username} is already being bad replied to!**`
-      );
+      return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Target", "0;30"), style(targetUser.username, "0;97")]], [[style("Result", "0;30"), style("That user is already being bad replied to!", "0;97")]]));
     }
 
-    // Create task using TaskManager
-    const taskName = `badreply_${targetUser.id}`;
-    const task = TaskManager.createTask(taskName, guildId);
-
+    const task = TaskManager.createTask(`badreply_${targetUser.id}`, guildId);
     if (!task) {
-      return message.channel.send(formatAnsiBlock([style('> ❌ Failed to create bad reply task!', '1;91')]));
+      return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Target", "0;30"), style(targetUser.username, "0;97")]], [[style("Result", "0;30"), style("Failed to create bad reply task!", "0;97")]]));
     }
 
-    // Store session data
     const sessionData = {
       targetUserId: targetUser.id,
       targetUsername: targetUser.username,
-      guildId: guildId,
+      guildId,
       channelId: message.channel.id,
       startedBy: message.author.id,
       startedAt: Date.now(),
       replyCount: 0,
-      task: task,
+      task,
       isCancelled: false,
-      // Per-session reply throttle: enforce a minimum gap between replies so
-      // we don't fire one reply per incoming message at full send rate.
       lastReplyAt: 0,
       replyCooldownMs: 1000,
     };
 
-    // Add cancellation listener to clean up session immediately
     if (task.signal) {
       task.signal.addEventListener("abort", () => {
         sessionData.isCancelled = true;
         badReplySessions.delete(sessionKey);
-        // Only log if it was actually cancelled by user, not by natural completion
         if (!task.signal.reason || task.signal.reason !== "completed") {
-          log(
-            `Bad reply task for ${targetUser.username} was cancelled`,
-            "warn"
-          );
+          log(`Bad reply task for ${targetUser.username} was cancelled`, "warn");
         }
       });
     }
 
-    // Store session under the specific guild/DM key
     badReplySessions.set(sessionKey, sessionData);
-    // Also store a global session key so mocking works across guilds/DMs
-    const globalKey = `${targetUser.id}:global`;
-    badReplySessions.set(globalKey, sessionData);
+    badReplySessions.set(`${targetUser.id}:global`, sessionData);
 
-    // Also register a dedicated listener for this target to ensure replies
-    try {
-      const messageListener = async (msg) => {
-        try {
-          if (!msg) return;
-          if (msg.author?.id !== targetUser.id) return;
-          if (msg.author.bot) return;
+    const messageListener = async (msg) => {
+      try {
+        if (!msg || msg.author?.id !== targetUser.id || msg.author.bot) return;
+        const now = Date.now();
+        if (now - sessionData.lastReplyAt < sessionData.replyCooldownMs) return;
+        sessionData.lastReplyAt = now;
+        const replies = getBadReplies();
+        await msg.reply(replies[Math.floor(Math.random() * replies.length)]);
+        sessionData.replyCount++;
+      } catch {}
+    };
+    client.on('messageCreate', messageListener);
+    sessionData.listener = messageListener;
 
-          // ---- Per-session throttle: drop replies that arrive before the
-          // cooldown elapses, instead of replying at the sender's full rate.
-          const now = Date.now();
-          if (now - sessionData.lastReplyAt < sessionData.replyCooldownMs) {
-            return;
-          }
-          sessionData.lastReplyAt = now;
-
-          // Avoid replying to messages not visible to the bot
-              const replies = getBadReplies();
-              const mocked = replies[Math.floor(Math.random() * replies.length)];
-              await msg.reply(mocked);
-          sessionData.replyCount++;
-          console.log(`[badreply] listener replied to ${msg.author.id} in ${msg.guild?.id || 'dm'}`);
-        } catch (err) {
-          console.log('[badreply] listener error:', err?.message || err);
-        }
-      };
-
-      // Attach the listener to the client (global)
-      client.on('messageCreate', messageListener);
-      sessionData.listener = messageListener;
-    } catch (e) {
-      // ignore listener attach failures
-    }
-
-    const startLines = [
-      style('═════════ BADREPLY ACTIVE ═════════', '0;30'),
-      '',
-      style('> STATUS :', '1;31') + ' ' + style('ACTIVE', '0;97'),
-      style('> TARGET :', '1;31') + ' ' + style(`${targetUser.username} (${targetUser.id})`, '0;97'),
-      '',
-      style('Every message they send will receive a mock reply.', '0;97')
-    ];
-    await message.channel.send(formatAnsiBlock(startLines));
-
-    // Debug: print session info to terminal so we can verify matching
-    try {
-      console.log(`[badreply] session started: key=${sessionKey} target=${targetUser.id} guild=${guildId} task=${taskName}`);
-      console.log(`[badreply] active sessions count: ${badReplySessions.size}`);
-    } catch (e) {
-      // ignore
-    }
-
-    log(
-      `Started bad replying to ${targetUser.username} (${targetUser.id}) in ${guildId}`,
-      "debug"
-    );
+    await message.channel.send(formatThreeBlock(
+      "Barro Badreply",
+      [
+        [style("Target", "0;30"), style(`${targetUser.username} (${targetUser.id})`, "0;97")],
+        [style("Status", "0;30"), style("ACTIVE", "0;97")]
+      ],
+      [[style("Result", "0;30"), style("Every message they send will receive a mock reply.", "0;97")]]
+    ));
+    log(`Started bad replying to ${targetUser.username} (${targetUser.id}) in ${guildId}`, "debug");
   },
 
-  async stopBadReply(client, message, args) {
+  async stopBadReply(client, message, args) {s
     let targetUser = null;
-
-    // Parse user from mention or ID
-    if (message.mentions.users.size > 0) {
-      targetUser = message.mentions.users.first();
-    } else if (args[0]) {
+    if (message.mentions.users.size > 0) targetUser = message.mentions.users.first();
+    else if (args[0]) {
       try {
         const userId = args[0].replace(/[<@!>]/g, "");
-        if (/^\d+$/.test(userId)) {
-          targetUser = await client.users.fetch(userId);
-        }
-      } catch (error) {
-        return message.channel.send("❌ **User not found!**");
+        if (/^\d+$/.test(userId)) targetUser = await client.users.fetch(userId);
+      } catch {
+        return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Target", "0;30"), style("Unknown", "0;97")]], [[style("Result", "0;30"), style("User not found!", "0;97")]]));
       }
     }
-
     if (!targetUser) {
-      return message.channel.send(
-        "❌ **Please specify which user to stop bad replying to!**"
-      );
+      return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Target", "0;30"), style("Unknown", "0;97")]], [[style("Result", "0;30"), style("Please specify which user to stop bad replying to!", "0;97")]]));
     }
 
     const guildId = message.guild?.id || "dm";
     const sessionKey = `${targetUser.id}:${guildId}`;
     const globalKey = `${targetUser.id}:global`;
-
-    let sessionData = null;
-    let usedKey = null;
-
-    if (badReplySessions.has(sessionKey)) {
-      sessionData = badReplySessions.get(sessionKey);
-      usedKey = sessionKey;
-    } else if (badReplySessions.has(globalKey)) {
-      sessionData = badReplySessions.get(globalKey);
-      usedKey = globalKey;
-    } else {
-      return message.channel.send(
-        `❌ **${targetUser.username} is not being bad replied to!**`
-      );
+    const sessionData = badReplySessions.get(sessionKey) || badReplySessions.get(globalKey);
+    if (!sessionData) {
+      return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Target", "0;30"), style(targetUser.username, "0;97")]], [[style("Result", "0;30"), style("That user is not being bad replied to!", "0;97")]]));
     }
-    const duration = Date.now() - sessionData.startedAt;
-    const durationText = this.formatDuration(duration);
 
-    // Stop the task and remove session
-    if (sessionData.task) {
-      sessionData.task.stop();
-    }
-    // Remove both specific and global keys
+    if (sessionData.task) sessionData.task.stop();
     badReplySessions.delete(sessionKey);
     badReplySessions.delete(globalKey);
-
-    // Remove any attached listener
     try {
-      if (sessionData.listener && client && typeof client.off === 'function') {
-        client.off('messageCreate', sessionData.listener);
-      }
-    } catch (e) {}
+      if (sessionData.listener && typeof client.off === 'function') client.off('messageCreate', sessionData.listener);
+    } catch {}
 
-    const stopLines = [
-      style('═════════ BADREPLY STOPPED ═════════', '0;30'),
-      '',
-      style('> TARGET :', '1;31') + ' ' + style(`${targetUser.username} (${targetUser.id})`, '0;97'),
-      style('> DURATION :', '1;31') + ' ' + style(durationText, '0;97'),
-      style('> REPLIES :', '1;31') + ' ' + style(String(sessionData.replyCount), '0;97'),
-    ];
-    await message.channel.send(formatAnsiBlock(stopLines));
-
-    log(
-      `Stopped bad replying to ${targetUser.username} (${targetUser.id})`,
-      "debug"
-    );
+    const durationText = this.formatDuration(Date.now() - sessionData.startedAt);
+    await message.channel.send(formatThreeBlock(
+      "Barro Badreply",
+      [
+        [style("Target", "0;30"), style(`${targetUser.username} (${targetUser.id})`, "0;97")],
+        [style("Duration", "0;30"), style(durationText, "0;97")],
+        [style("Replies", "0;30"), style(String(sessionData.replyCount), "0;97")]
+      ],
+      [[style("Result", "0;30"), style("Badreply stopped.", "0;97")]]
+    ));
   },
 
   async listActive(client, message) {
     const guildId = message.guild?.id || "dm";
-    const activeSessions = Array.from(badReplySessions.entries()).filter(
-      ([key, data]) => data.guildId === guildId
-    );
-
+    const activeSessions = Array.from(badReplySessions.values()).filter(data => data.guildId === guildId);
     if (activeSessions.length === 0) {
-      return message.channel.send(formatAnsiBlock([style('📝 No active bad reply sessions!', '0;97')]));
+      return message.channel.send(formatThreeBlock("Barro Badreply", [[style("Sessions", "0;30"), style("0", "0;97")]], [[style("Result", "0;30"), style("No active bad reply sessions!", "0;97")]]));
     }
 
-    const listLines = [style('═════════ ACTIVE BADREPLY SESSIONS ═════════', '0;30'), ''];
-    for (const [sessionKey, data] of activeSessions) {
-      const duration = Date.now() - data.startedAt;
-      const durationText = this.formatDuration(duration);
-      listLines.push(style(`• ${data.targetUsername} (${data.targetUserId}) - ${durationText} - replies: ${data.replyCount}`, '0;97'));
-    }
-
-    await message.channel.send(formatAnsiBlock(listLines));
+    const sessionRows = activeSessions.map(data => [
+      style(data.targetUsername, "0;97"),
+      style(`${this.formatDuration(Date.now() - data.startedAt)} | ${data.replyCount} replies`, "0;97")
+    ]);
+    const body = [
+      formatAnsiBlock([style("Barro", "4;30")]),([style("Badreply", "0;30")]),
+      formatAnsiBlock([style("Active sessions", "0;30"), ...sessionRows.flatMap(r => [r[0], r[1]])]),
+      formatAnsiBlock([style("Result", "0;30"), style(`${activeSessions.length} active session(s)`, "0;97")])
+    ].join('\n');
+    await message.channel.send(body);
   },
 
   formatDuration(ms) {
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`;
-    } else {
-      return `${seconds}s`;
-    }
+    if (hours > 0) return `${hours}h ${minutes % 60}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+    return `${seconds}s`;
   },
 };
 
@@ -352,8 +234,21 @@ function style(text, colorCode) {
 }
 
 function formatAnsiBlock(lines) {
-  return ['> ```ansi', ...lines.map((line) => `> ${line}`), '> ```'].join('\n');
+  return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
 }
 
-// Export the sessions map and getBadReplies function so they can be accessed from messageCreate event
+function formatThreeBlock(title, block2Rows, block3Rows) {
+  const clean = (value) => String(value).replace(/\u001b\[[0-9;]*m/g, '');
+  const width = [...block2Rows, ...block3Rows].reduce((max, [label]) => Math.max(max, clean(label).length), 0);
+  const renderRows = (rows) => rows.map(([label, value]) => {
+    const left = clean(label).padEnd(width, ' ');
+    return style(left, '0;97') + style(' | ', '0;30') + style(clean(value), '0;34');
+  });
+  return [
+    formatAnsiBlock([style(title, '0;30')]),
+    formatAnsiBlock(renderRows(block2Rows)),
+    formatAnsiBlock(renderRows(block3Rows))
+  ].join('\n');
+}
+
 export { badReplySessions, getBadReplies };

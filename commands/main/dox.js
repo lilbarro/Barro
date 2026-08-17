@@ -6,7 +6,6 @@ const IPS = [
   // Generate realistic looking IPs in common ranges
 ];
 
-
 const ENCRYPTION_TYPES = [
   "AES-256-GCM",
   "RSA-4096",
@@ -36,7 +35,6 @@ function rand(arr) {
 }
 
 function generateIP() {
-  // Generate realistic looking IPs avoiding obvious fake ranges
   const ranges = [
     `${randNum(50, 100)}.${randNum(10, 255)}.${randNum(10, 255)}.${randNum(1, 254)}`,
     `${randNum(150, 200)}.${randNum(10, 255)}.${randNum(10, 255)}.${randNum(1, 254)}`,
@@ -68,11 +66,10 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-// Progress bar generator
 function progressBar(current, total, size = 10) {
   const filled = Math.round((current / total) * size);
   const empty = size - filled;
-  return `${'■'.repeat(filled)}${'□'.repeat(empty)}`;
+  return `${'â– '.repeat(filled)}${'â–¡'.repeat(empty)}`;
 }
 
 export default {
@@ -83,10 +80,8 @@ export default {
   category: 'general',
   type: 'both',
   permissions: [],
-  cooldown: 30,
+  cooldown: 5,
   async execute(client, message, args) {
-
-    // Get target user
     let target = message.author;
 
     if (args.length > 0) {
@@ -97,119 +92,76 @@ export default {
         try {
           target = await client.users.fetch(args[0]);
         } catch {
-          return message.channel.send('> ❌ Could not find that user!');
+          return message.channel.send('> âŒ Could not find that user!');
         }
       }
     }
 
-    // Pre generate all fake data
     const fakeIP = generateIP();
     const fakeEncryption = rand(ENCRYPTION_TYPES);
     const fakeMAC = generateMacAddress();
     const fakePing = generatePingMs();
     const fakePort = generatePort();
 
-    // ---- STAGE 1 - Initializing ----
-    const scanMsg = await message.channel.send(formatAnsiBlock([
-      style('[ Barro\'S DOXX TOOL v1.0 ]', '1;30'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      style('> TARGET    :', '1;31') + ' ' + style(target.username, '0;97'),
-      style('> STATUS    :', '1;31') + ' ' + style('INITIALIZING', '0;97'),
-      style('> PROGRESS  :', '1;31') + ' ' + style('[' + progressBar(0, 5) + '] 0%', '0;97'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      '>> ' + SCAN_STAGES[0] + '...'
-    ]));
+    const scanMsg = await message.channel.send(renderDoxView('Initializing', 0, target, fakeIP, fakeMAC, fakePing, fakePort));
 
     await sleep(2000);
-
-    // ---- STAGE 2 - Locating ----
-    await scanMsg.edit(formatAnsiBlock([
-      style('[ Barro\'S DOXX TOOL v1.0 ]', '1;30'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      style('> TARGET    :', '1;31') + ' ' + style(target.username, '0;97'),
-      style('> STATUS    :', '1;31') + ' ' + style('SCANNING', '0;97'),
-      style('> PROGRESS  :', '1;31') + ' ' + style('[' + progressBar(1, 5) + '] 20%', '0;97'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      '>> ' + SCAN_STAGES[0] + '... DONE',
-      '>> ' + SCAN_STAGES[1] + '...'
-    ]));
+    await scanMsg.edit(renderDoxView('Scanning', 1, target, fakeIP, fakeMAC, fakePing, fakePort));
 
     await sleep(2500);
-
-    // ---- STAGE 3 - Decrypting device ----
-    await scanMsg.edit(formatAnsiBlock([
-      style('[ Barro DOXX TOOL v1.0 ]', '1;30'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      style('> TARGET    :', '1;31') + ' ' + style(target.username, '0;97'),
-      style('> STATUS    :', '1;31') + ' ' + style('DECRYPTING', '0;97'),
-      style('> PROGRESS  :', '1;31') + ' ' + style('[' + progressBar(2, 5) + '] 40%', '0;97'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      '>> ' + SCAN_STAGES[0] + '... DONE',
-      '>> ' + SCAN_STAGES[1] + '... DONE',
-      '>> ' + SCAN_STAGES[2] + '...',
-      '>> Bypassing ' + fakeEncryption + ' encryption...'
-    ]));
+    await scanMsg.edit(renderDoxView('Decrypting', 2, target, fakeIP, fakeMAC, fakePing, fakePort, fakeEncryption));
 
     await sleep(3000);
-
-    // ---- STAGE 4 - Extracting IP ----
-    await scanMsg.edit(formatAnsiBlock([
-      style('[ Barro\'S DOXX TOOL v1.0 ]', '1;30'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      style('> TARGET    :', '1;31') + ' ' + style(target.username, '0;97'),
-      style('> STATUS    :', '1;31') + ' ' + style('EXTRACTING', '0;97'),
-      style('> PROGRESS  :', '1;31') + ' ' + style('[' + progressBar(3, 5) + '] 60%', '0;97'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      '>> ' + SCAN_STAGES[0] + '... DONE',
-      '>> ' + SCAN_STAGES[1] + '... DONE',
-      '>> ' + SCAN_STAGES[2] + '... DONE',
-      '>> ' + SCAN_STAGES[3] + '...',
-      '>> Pinging endpoint... ' + fakePing
-    ]));
+    await scanMsg.edit(renderDoxView('Extracting', 3, target, fakeIP, fakeMAC, fakePing, fakePort));
 
     await sleep(2500);
-
-    // ---- STAGE 5 - Compiling ----
-    await scanMsg.edit(formatAnsiBlock([
-      style('[ Barro\'S DOXX TOOL v1.0 ]', '1;30'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      style('> TARGET    :', '1;31') + ' ' + style(target.username, '0;97'),
-      style('> STATUS    :', '1;31') + ' ' + style('COMPILING', '0;97'),
-      style('> PROGRESS  :', '1;31') + ' ' + style('[' + progressBar(4, 5) + '] 80%', '0;97'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      '>> ' + SCAN_STAGES[0] + '... DONE',
-      '>> ' + SCAN_STAGES[1] + '... DONE',
-      '>> ' + SCAN_STAGES[2] + '... DONE',
-      '>> ' + SCAN_STAGES[3] + '... DONE',
-      '>> ' + SCAN_STAGES[4] + '...'
-    ]));
+    await scanMsg.edit(renderDoxView('Compiling', 4, target, fakeIP, fakeMAC, fakePing, fakePort));
 
     await sleep(2000);
-
-    // ---- FINAL RESULT ----
-    await scanMsg.edit(formatAnsiBlock([
-      style('[ Barro\'S DOXX TOOL v1.0 ]', '1;30'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      style('> TARGET    :', '1;31') + ' ' + style(target.username, '0;97'),
-      style('> STATUS    :', '1;31') + ' ' + style('COMPLETE', '0;97'),
-      style('> PROGRESS  :', '1;31') + ' ' + style('[' + progressBar(5, 5) + '] 100%', '0;97'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      '>> ' + SCAN_STAGES[0] + '... DONE',
-      '>> ' + SCAN_STAGES[1] + '... DONE',
-      '>> ' + SCAN_STAGES[2] + '... DONE',
-      '>> ' + SCAN_STAGES[3] + '... DONE',
-      '>> ' + SCAN_STAGES[4] + '... DONE',
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      style('  RESULTS', '1;31'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
-      style('> IP ADDR   :', '1;31') + ' ' + style(fakeIP, '0;97'),
-      style('> PORT      :', '1;31') + ' ' + style(fakePort.toString(), '0;97'),
-      style('> MAC ADDR  :', '1;31') + ' ' + style(fakeMAC, '0;97'),
-      style('> PING      :', '1;31') + ' ' + style(fakePing, '0;97'),
-      '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
-    ]));
+    await scanMsg.edit(renderDoxView('Complete', 5, target, fakeIP, fakeMAC, fakePing, fakePort));
   }
 };
+
+function renderDoxView(stageName, stageIndex, target, fakeIP, fakeMAC, fakePing, fakePort, fakeEncryption = '') {
+  const progressMap = ['0%', '20%', '40%', '60%', '80%', '100%'];
+  const stageColor = stageName === 'Complete' ? '1;32' : '1;33';
+
+  const topBlock = formatAnsiBlock([
+    style('Barro v1.5', '4;30') + style(' Doxx Tool', '0;34') + style(' | ', '0;30') + style(stageName, stageColor),
+    kv('Target', target.username, 12),
+    '',
+    style('Status', '0;30'),
+    kv('Phase', stageName, 12),
+    kv('Progress', progressMap[stageIndex] || '100%', 12)
+  ]);
+
+  const stageBlockLines = [
+    style('Stages', '0;30'),
+    style(`>> ${SCAN_STAGES[Math.min(stageIndex, SCAN_STAGES.length - 1)]}...`, '0;97')
+  ];
+
+  const stageBlock = formatAnsiBlock(stageBlockLines);
+
+  const resultBlockLines = stageName === 'Complete'
+    ? [
+        style('Results', '0;30'),
+        kv('IP Address', fakeIP, 12),
+        kv('Port', fakePort.toString(), 12),
+        kv('MAC Address', fakeMAC, 12),
+        kv('Ping', fakePing, 12)
+      ]
+    : [
+        style('Results', '0;30'),
+        kv('IP Address', 'Pending', 12),
+        kv('Port', 'Pending', 12),
+        kv('MAC Address', 'Pending', 12),
+        kv('Ping', 'Pending', 12)
+      ];
+
+  const resultBlock = formatAnsiBlock(resultBlockLines);
+
+  return [topBlock, stageBlock, resultBlock].join('\n\n');
+}
 
 function style(text, colorCode) {
   return `\u001b[${colorCode}m${text}\u001b[0m`;
@@ -217,4 +169,9 @@ function style(text, colorCode) {
 
 function formatAnsiBlock(lines) {
   return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+}
+
+function kv(label, value, padTo) {
+  const padded = String(label).padEnd(padTo, ' ');
+  return style(padded, '0;97') + style(' | ', '0;30') + style(String(value), '0;34');
 }

@@ -28,8 +28,6 @@ export default {
   permissions: [],
   cooldown: 5,
   async execute(client, message, args) {
-
-    // Delete the command message itself
     await message.delete().catch(() => {});
 
     const sub = args[0]?.toLowerCase();
@@ -38,36 +36,71 @@ export default {
     if (sub === 'on') {
       data.enabled = true;
       saveData(data);
-      const confirm = await message.channel.send(
-  '> ✅ **AI Reply enabled!**\n' +
-  '> Anyone who DMs, mentions or replies to me will get an AI response.\n' +
-  '> Use `,aireply off` to disable.'
-);
-setTimeout(() => confirm.delete().catch(() => {}), 1000);
-return;
+      const confirm = await message.channel.send(formatThreeBlock(
+        'Barro AI Reply',
+        [[style('Status', '0;30'), style('ON', '0;97')]],
+        [[style('Result', '0;30'), style('AI Reply enabled.', '0;97')], [style('Usage', '0;30'), style('Use ,aireply off to disable.', '0;97')]]
+      ));
+      setTimeout(() => confirm.delete().catch(() => {}), 1000);
+      return;
+    }
 
-    } else if (sub === 'off') {
+    if (sub === 'off') {
       data.enabled = false;
       saveData(data);
-     const confirm = await message.channel.send('> ✅ **AI Reply disabled!**');
-setTimeout(() => confirm.delete().catch(() => {}), 1000);
-return;
+      const confirm = await message.channel.send(formatThreeBlock(
+        'Barro AI Reply',
+        [[style('Status', '0;30'), style('OFF', '0;97')]],
+        [[style('Result', '0;30'), style('AI Reply disabled.', '0;97')]]
+      ));
+      setTimeout(() => confirm.delete().catch(() => {}), 1000);
+      return;
+    }
 
-    } else if (sub === 'clear') {
+    if (sub === 'clear') {
       data.conversations = {};
       saveData(data);
-      return message.channel.send('> ✅ **All conversation history cleared!**');
-
-    } else {
-      const convCount = Object.keys(data.conversations || {}).length;
-      return message.channel.send(
-        '> ℹ️ **AI Reply Status:** ' + (data.enabled ? '✅ ON' : '❌ OFF') + '\n' +
-        '> **People tracked:** ' + convCount + '\n' +
-        '> \n' +
-        '> `,aireply on` - Enable\n' +
-        '> `,aireply off` - Disable\n' +
-        '> `,aireply clear` - Clear all conversation history'
-      );
+      const confirm = await message.channel.send(formatThreeBlock(
+        'Barro AI Reply',
+        [[style('Status', '0;30'), style(data.enabled ? 'ON' : 'OFF', '0;97')]],
+        [[style('Result', '0;30'), style('All conversation history cleared.', '0;97')]]
+      ));
+      setTimeout(() => confirm.delete().catch(() => {}), 1000);
+      return;
     }
+
+    const convCount = Object.keys(data.conversations || {}).length;
+    return message.channel.send(formatThreeBlock(
+      'Barro AI Reply',
+      [
+        [style('Status', '0;30'), style(data.enabled ? 'ON' : 'OFF', '0;97')],
+        [style('Tracked', '0;30'), style(String(convCount), '0;97')]
+      ],
+      [
+        [style('Commands', '0;30'), style(',aireply on | ,aireply off | ,aireply clear', '0;97')]
+      ]
+    ));
   }
 };
+
+function style(text, colorCode) {
+  return `\u001b[${colorCode}m${text}\u001b[0m`;
+}
+
+function formatAnsiBlock(lines) {
+  return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+}
+
+function formatThreeBlock(title, block2Rows, block3Rows) {
+  const clean = (value) => String(value).replace(/\u001b\[[0-9;]*m/g, '');
+  const width = [...block2Rows, ...block3Rows].reduce((max, [label]) => Math.max(max, clean(label).length), 0);
+  const renderRows = (rows) => rows.map(([label, value]) => {
+    const left = clean(label).padEnd(width, ' ');
+    return style(left, '0;97') + style(' | ', '0;30') + style(clean(value), '0;34');
+  });
+  return [
+    formatAnsiBlock([style(title, '0;30')]),
+    formatAnsiBlock(renderRows(block2Rows)),
+    formatAnsiBlock(renderRows(block3Rows))
+  ].join('\n');
+}

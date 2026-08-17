@@ -40,12 +40,12 @@ export default {
             
             // Create a formatted response with quote blocks
             const response = [
-                `> 🏓 ${style('Pong!', '1;30')}`,
+                `> 🏓 ${style('Pong!', '4;30')}`,
                 '> ',
-                `> ${getLatencyEmoji(latency)} ${style('Message Latency:', '1;31')} ${latency}ms`,
-                `> ${getLatencyEmoji(apiLatency)} ${style('API Latency:', '1;31')} ${apiLatency}ms`,
+                `> ${getLatencyEmoji(latency)} ${style('Message Latency:', '0;97')} ${latency}ms`,
+                `> ${getLatencyEmoji(apiLatency)} ${style('API Latency:', '0;97')} ${apiLatency}ms`,
                 '> ',
-                `> ⏱️ ${style('Uptime:', '1;31')} ${uptime}`
+                `> ⏱️ ${style('Uptime:', '0;34')} ${uptime}`
             ];
             
             // Edit the initial message with the results

@@ -11,127 +11,124 @@ export default {
   permissions: [],
   cooldown: 15,
   async execute(client, message, args) {
-
     const cfg = loadConfig()?.ai_afk;
     const userId = message.author.id;
     const sub = args[0]?.toLowerCase();
-
     await message.delete().catch(() => {});
 
-    // ---- NO ARGS ----
     if (!sub) {
-      const confirm = await message.channel.send(
-        '> ℹ️ **AI AFK Commands:**\n' +
-        '> `,aiafk enable` - Enable AI AFK\n' +
-        '> `,aiafk enable [reason]` - Enable with reason\n' +
-        '> `,aiafk disable` - Disable AI AFK\n' +
-        '> `,aiafk status` - Check current status'
-      );
-      setTimeout(() => confirm.delete().catch(() => {}), 3000);
-      return;
+      return message.channel.send(formatThreeBlock(
+        'Barro AI AFK',
+        [
+          [style('Enable', '0;30'), style('`,aiafk enable`', '0;97')],
+          [style('Reason', '0;30'), style('`,aiafk enable [reason]`', '0;97')],
+          [style('Disable', '0;30'), style('`,aiafk disable`', '0;97')],
+          [style('Status', '0;30'), style('`,aiafk status`', '0;97')]
+        ],
+        [[style('Info', '0;30'), style('AI AFK commands and controls.', '0;97')]]
+      ));
     }
 
-    // ---- ENABLE ----
     if (sub === 'enable' || sub === 'on') {
       if (!cfg || !cfg.enabled) {
-        const confirm = await message.channel.send('> ❌ AI AFK is disabled in config.yaml!');
-        setTimeout(() => confirm.delete().catch(() => {}), 2000);
-        return;
+        return message.channel.send(formatThreeBlock('Barro AI AFK',
+          [[style('Status', '0;30'), style('OFF', '0;97')]],
+          [[style('Result', '0;30'), style('AI AFK is disabled in config.yaml!', '0;97')]]
+        ));
       }
-
       if (afkSessions.has(userId)) {
         const session = afkSessions.get(userId);
         const duration = formatDuration(Date.now() - session.startedAt);
-        const confirm = await message.channel.send(
-          '> ⚠️ AI AFK is already active for **' + duration + '**!\n' +
-          '> Use `,aiafk disable` to turn it off first.'
-        );
-        setTimeout(() => confirm.delete().catch(() => {}), 3000);
-        return;
+        return message.channel.send(formatThreeBlock('Barro AI AFK',
+          [[style('Status', '0;30'), style('ON', '0;97')]],
+          [[style('Result', '0;30'), style('Already active.', '0;97')], [style('Duration', '0;30'), style(duration, '0;97')]]
+        ));
       }
 
       const reason = args.slice(1).join(' ').trim() || null;
-
-      afkSessions.set(userId, {
-        reason,
-        startedAt: Date.now(),
-        userName: message.member?.displayName || message.author.username
-      });
-
-      const confirm = await message.channel.send(
-        '> 🤖 **AI AFK enabled!**' + (reason ? ' Reason: **' + reason + '**' : '') + '\n' +
-        '> Anyone who mentions or DMs you will get an AI response.\n' +
-        '> Use `,aiafk disable` to turn off.'
-      );
-      setTimeout(() => confirm.delete().catch(() => {}), 3000);
+      afkSessions.set(userId, { reason, startedAt: Date.now(), userName: message.member?.displayName || message.author.username });
       log('AI AFK enabled by ' + message.author.username + ' reason: ' + (reason || 'none'), 'debug');
-      return;
+      return message.channel.send(formatThreeBlock(
+        'Barro AI AFK',
+        [[style('Status', '0;30'), style('ON', '0;97')], [style('Reason', '0;30'), style(reason || 'none', '0;97')]],
+        [[style('Result', '0;30'), style('AI AFK enabled.', '0;97')], [style('Info', '0;30'), style('Mentions and DMs will get an AI response.', '0;97')]]
+      ));
     }
 
-    // ---- DISABLE ----
     if (sub === 'disable' || sub === 'off') {
       if (!afkSessions.has(userId)) {
-        const confirm = await message.channel.send('> ❌ AI AFK is not active!');
-        setTimeout(() => confirm.delete().catch(() => {}), 2000);
-        return;
+        return message.channel.send(formatThreeBlock('Barro AI AFK',
+          [[style('Status', '0;30'), style('OFF', '0;97')]],
+          [[style('Result', '0;30'), style('AI AFK is not active!', '0;97')]]
+        ));
       }
 
       const session = afkSessions.get(userId);
       const duration = formatDuration(Date.now() - session.startedAt);
-
-      // Get mention summary
       const mentions = getMentionLog(userId);
       clearSession(userId);
 
-      let summary = '> ✅ **AI AFK disabled** after **' + duration + '**.\n';
-
+      const detailRows = [
+        [style('Duration', '0;30'), style(duration, '0;97')],
+        [style('Messages', '0;30'), style(String(mentions.length), '0;97')]
+      ];
       if (mentions.length > 0) {
         const uniqueSenders = [...new Set(mentions.map(m => m.senderName))];
-        summary += '> 📬 **' + mentions.length + ' message(s)** from **' + uniqueSenders.length + '** person(s):\n';
-        mentions.slice(-10).forEach((m, i) => {
-          const time = new Date(m.timestamp).toLocaleTimeString();
-          summary += '> **' + (i + 1) + '.** **' + m.senderName + '** at ' + time + ': `' +
-            m.content.slice(0, 50) + (m.content.length > 50 ? '...' : '') + '`\n';
-        });
-        if (mentions.length > 10) {
-          summary += '> ...and ' + (mentions.length - 10) + ' more\n';
-        }
-      } else {
-        summary += '> 📬 No messages received while away.';
+        detailRows.push([style('Senders', '0;30'), style(String(uniqueSenders.length), '0;97')]);
       }
 
-      await message.channel.send(summary).catch(() => {});
       log('AI AFK disabled by ' + message.author.username, 'debug');
-      return;
+      return message.channel.send(formatThreeBlock(
+        'Barro AI AFK',
+        [[style('Status', '0;30'), style('OFF', '0;97')]],
+        detailRows
+      ));
     }
 
-    // ---- STATUS ----
     if (sub === 'status') {
       if (!afkSessions.has(userId)) {
-        const confirm = await message.channel.send('> ℹ️ AI AFK is currently **OFF**.');
-        setTimeout(() => confirm.delete().catch(() => {}), 2000);
-        return;
+        return message.channel.send(formatThreeBlock(
+          'Barro AI AFK',
+          [[style('Status', '0;30'), style('OFF', '0;97')]],
+          [[style('Result', '0;30'), style('AI AFK is currently OFF.', '0;97')]]
+        ));
       }
-
       const session = afkSessions.get(userId);
       const duration = formatDuration(Date.now() - session.startedAt);
       const mentions = getMentionLog(userId);
-
-      const confirm = await message.channel.send(
-        '> ℹ️ **AI AFK Status: ON**\n' +
-        '> Active for: **' + duration + '**\n' +
-        '> Reason: **' + (session.reason || 'none') + '**\n' +
-        '> Messages received: **' + mentions.length + '**'
-      );
-      setTimeout(() => confirm.delete().catch(() => {}), 5000);
-      return;
+      return message.channel.send(formatThreeBlock(
+        'Barro AI AFK',
+        [[style('Status', '0;30'), style('ON', '0;97')], [style('Reason', '0;30'), style(session.reason || 'none', '0;97')]],
+        [[style('Duration', '0;30'), style(duration, '0;97')], [style('Messages', '0;30'), style(String(mentions.length), '0;97')]]
+      ));
     }
 
-    // ---- UNKNOWN ----
-    const confirm = await message.channel.send(
-      '> ❌ Unknown subcommand!\n' +
-      '> Use `,aiafk enable` or `,aiafk disable`'
-    );
-    setTimeout(() => confirm.delete().catch(() => {}), 2000);
+    return message.channel.send(formatThreeBlock(
+      'Barro AI AFK',
+      [[style('Status', '0;30'), style('Unknown', '0;97')]],
+      [[style('Result', '0;30'), style('Unknown subcommand. Use ,aiafk enable or ,aiafk disable.', '0;97')]]
+    ));
   }
 };
+
+function style(text, colorCode) {
+  return `\u001b[${colorCode}m${text}\u001b[0m`;
+}
+
+function formatAnsiBlock(lines) {
+  return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+}
+
+function formatThreeBlock(title, block2Rows, block3Rows) {
+  const clean = (value) => String(value).replace(/\u001b\[[0-9;]*m/g, '');
+  const width = [...block2Rows, ...block3Rows].reduce((max, [label]) => Math.max(max, clean(label).length), 0);
+  const renderRows = (rows) => rows.map(([label, value]) => {
+    const left = clean(label).padEnd(width, ' ');
+    return style(left, '0;97') + style(' | ', '0;30') + style(clean(value), '0;34');
+  });
+  return [
+    formatAnsiBlock([style(title, '0;30')]),
+    formatAnsiBlock(renderRows(block2Rows)),
+    formatAnsiBlock(renderRows(block3Rows))
+  ].join('\n');
+}

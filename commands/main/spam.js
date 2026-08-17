@@ -14,30 +14,21 @@ export default {
 
   async execute(client, message, args) {
     if (args.length < 2) {
-      return message.channel.send(formatAnsiBlock([
-        style('[ SPAM ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style('Usage: spam <count> <message>', '0;97'),
-        '  Example: spam 10 Hello World!'
-      ]));
+      return message.channel.send(formatThreeBlock(
+        'Barro Spam',
+        [['Usage', 'spam <count> <message>']],
+        [['Example', 'spam 10 Hello World!']]
+      ));
     }
 
     const count = parseInt(args[0]);
     if (!count || count <= 0 || count > 50) {
-      return message.channel.send(formatAnsiBlock([
-        style('[ SPAM ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style('Please provide a valid number between 1 and 50.', '0;97')
-      ]));
+      return message.channel.send(formatThreeBlock('Barro Spam', [['Count', 'Invalid']], [['Result', 'Please provide a valid number between 1 and 50.']]));
     }
 
     const spamMessage = args.slice(1).join(" ");
     if (!spamMessage.trim()) {
-      return message.channel.send(formatAnsiBlock([
-        style('[ SPAM ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style('Please provide a message to spam.', '0;97')
-      ]));
+      return message.channel.send(formatThreeBlock('Barro Spam', [['Count', String(count)]], [['Result', 'Please provide a message to spam.']]));
     }
 
     const channelId = message.channel.id;
@@ -46,21 +37,13 @@ export default {
 
     // Check if spam task is already running in this channel
     if (TaskManager.hasTask(taskName, guildId)) {
-      return message.channel.send(formatAnsiBlock([
-        style('[ SPAM ]', '1;30'),
-        '',
-        style('WARN:', '1;31') + ' ' + style('A spam task is already running in this channel.', '0;97')
-      ]));
+      return message.channel.send(formatThreeBlock('Barro Spam', [['Count', String(count)]], [['Result', 'A spam task is already running in this channel.']]));
     }
 
     // Create spam task
     const task = TaskManager.createTask(taskName, guildId);
     if (!task) {
-      return message.channel.send(formatAnsiBlock([
-        style('[ SPAM ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style('Failed to create spam task.', '0;97')
-      ]));
+      return message.channel.send(formatThreeBlock('Barro Spam', [['Count', String(count)]], [['Result', 'Failed to create spam task.']]));
     }
 
     try {
@@ -69,9 +52,7 @@ export default {
 
       // Send confirmation message
       const statusMsg = await message.channel.send(formatAnsiBlock([
-        style('[ SPAM ]', '1;30'),
-        '',
-        style('INFO:', '1;31') + ' ' + style(`Starting spam: ${count} messages...`, '0;97')
+        ...formatRows([['Status', 'Starting']], '0;97')
       ]));
 
       let sentCount = 0;
@@ -87,11 +68,7 @@ export default {
             checkInterval = null;
           }
           statusMsg
-            .edit(formatAnsiBlock([
-              style('[ SPAM ]', '1;30'),
-              '',
-              style('RESULT:', '1;31') + ' ' + style(`Spam cancelled after sending ${sentCount}/${count} messages.`, '0;97')
-            ]))
+            .edit(formatThreeBlock('Barro Spam', [['Count', String(count)]], [['Result', `Spam cancelled after sending ${sentCount}/${count} messages.`]]))
             .catch(() => {});
         }
       };
@@ -152,9 +129,7 @@ export default {
       if (!isCancelled) {
         statusMsg
           .edit(formatAnsiBlock([
-            style('[ SPAM ]', '1;30'),
-            '',
-            style('RESULT:', '1;31') + ' ' + style(`Spam completed! Sent ${sentCount}/${count} messages.`, '0;97')
+            ...formatRows([['Status', 'Complete']], '0;97')
           ]))
           .then((msg) => {
             // Always use regular setTimeout since task will be destroyed in finally block
@@ -174,9 +149,7 @@ export default {
     } catch (error) {
       log(`Error in spam command: ${error.message}`, "error");
       message.channel.send(formatAnsiBlock([
-        style('[ SPAM ]', '1;30'),
-        '',
-        style('ERROR:', '1;31') + ' ' + style(`An error occurred during spam: ${error.message}`, '0;97')
+        ...formatRows([['Result', `An error occurred during spam: ${error.message}`]], '0;97')
       ]));
     } finally {
       // Clean up task
@@ -191,5 +164,18 @@ function style(text, colorCode) {
 
 function formatAnsiBlock(lines) {
   return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+}
+
+function formatRows(rows, valueColor = '0;34') {
+  const width = rows.reduce((max, [label]) => Math.max(max, label.length), 0);
+  return rows.map(([label, value]) => style(label.padEnd(width, ' '), '0;97') + style(' | ', '0;30') + style(value, valueColor));
+}
+
+function formatThreeBlock(title, block2Rows, block3Rows) {
+  return [
+    formatAnsiBlock([style(title, '0;30')]),
+    formatAnsiBlock(formatRows(block2Rows)),
+    formatAnsiBlock(formatRows(block3Rows))
+  ].join('\n');
 }
 

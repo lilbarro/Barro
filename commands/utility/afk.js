@@ -24,19 +24,19 @@ export default {
             writeAfkData(afkData);
 
             await message.channel.send(formatAnsiBlock([
-              style('[ AFK ]', '1;30'),
+              style('[ AFK ]', '0;30'),
               '',
-              style('STATUS:', '1;31') + ' ' + style('You are now AFK.', '0;97'),
-              style('REASON:', '1;31') + ' ' + style(reason, '0;97')
+              style('STATUS:', '0;34') + ' ' + style('You are now AFK.', '0;97'),
+              style('REASON:', '0;34') + ' ' + style(reason, '0;97')
             ]));
             log(`${message.author.tag} is now AFK. Reason: ${reason}`, 'info');
 
         } catch (error) {
             console.error('[ERROR] Error in afk command:', error);
             message.channel.send(formatAnsiBlock([
-              style('[ AFK ]', '1;30'),
+              style('[ AFK ]', '0;30'),
               '',
-              style('ERROR:', '1;31') + ' ' + style('An error occurred while setting your AFK status.', '0;97')
+              style('ERROR:', '0;34') + ' ' + style('An error occurred while setting your AFK status.', '0;97')
             ]));
         }
     }

@@ -1,11 +1,5 @@
 selfbot:
-  # The user token MUST come from the DISCORD_TOKEN environment variable, not
-  # this file. Hard-coding the token in source control (or anywhere committed)
-  # is how accounts get hijacked. To set it on Windows PowerShell:
-  #     $env:DISCORD_TOKEN = "your token here"
-  # On Bash:
-  #     export DISCORD_TOKEN="your token here"
-  token: ""
+  token: "PASTE_YOUR_TOKEN_HERE"
   prefix: ","
   status: "dnd"
   dm_logs: false
@@ -17,7 +11,7 @@ relationship_logs:
 debug_mode:
   enabled: false
 ai:
-  groq_api_key: "PASTE_GROQ_API_KEY_HERE"
+  groq_api_key: "PASTE_YOUR_GROQ_API_KEY_HERE"
 vc_command:
   mute: true
   deafen: true
@@ -82,7 +76,7 @@ ai_afk:
 
   # Custom instructions for the AI AFK model (system prompt prefix)
   instructions: |
-    You are Barro, a smart, helpful AI assistant responding on behalf of a user who is currently AFK on Discord.
+    You are Barro, a smart, helpful AI assistant (developed by Barro) responding on behalf of a user who is currently AFK on Discord.
     Your job is to reply naturally to messages sent to the AFK user, keeping context across the conversation.
     Be friendly, concise, and human-like. Never reveal which AI model you are or which provider powers you.
     Make it clear that the user is currently away, but handle questions helpfully in the meantime.
