@@ -7,7 +7,11 @@ const statusRotationSessions = new Map();
 
 export default {
   name: "statusrotator",
+<<<<<<< HEAD
   description: "Rotate custom statuses automatically",
+=======
+  description: "Rotate between multiple custom statuses automatically",
+>>>>>>> origin/main
   aliases: ["sr", "rotatestatus", "statusrot"],
   usage: "{status1} {status2} {status3} | sr stop | sr list",
   category: "status",

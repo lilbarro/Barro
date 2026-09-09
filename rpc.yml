@@ -5,8 +5,13 @@ rpc:
   default:
     type: STREAMING
     name: Barro's Self Bot
+<<<<<<< HEAD
     details: Barro v2
     state: Brand new UI with lightning fast latency! Using Barro v2-flash
+=======
+    details: Barro v1.5
+    state: Brand new UI with lightning fast latency! Using Barro v1.5-flash
+>>>>>>> origin/main
     url: https://www.twitch.tv/barro
     party:
       current: 1
@@ -21,6 +26,7 @@ rpc:
       large_text: ''
       small_image: ''
       small_text: ''
+
     buttons:
       - label: Get Barro
         url: https://discord.gg/KCchsavsYZ

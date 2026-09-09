@@ -1,5 +1,6 @@
 {
   "name": "Barro",
+<<<<<<< HEAD
   "version": "2.0.0",
   "main": "index.js",
   "type": "module",
@@ -13,5 +14,30 @@
   },
   "scripts": {
     "start": "node index.js"
+=======
+  "version": "1.5.0",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "discord.js-selfbot-v13": "latest",
+    "chalk": "latest",
+    "figlet": "latest",
+    "gradient-string": "latest",
+    "electron": "^33.4.11"
+  },
+  "devDependencies": {
+    "electron-builder": "^25.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.barro.selfbot",
+    "productName": "Barro Bot Launcher",
+    "win": {
+      "target": "nsis"
+    }
+>>>>>>> origin/main
   }
 }

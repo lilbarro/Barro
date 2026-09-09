@@ -90,7 +90,11 @@ export default {
                 });
                 log(`Attempting to join voice channel: ${channel.name} (${channel.id}) in ${message.guild.name} via WebSocket`, 'debug');
                 message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/general/joinVC.js
                     `${style('Attempting to join voice channel:', THEME.LABEL_COLOR)} ${style(`\`${channel.name}\``, THEME.ACCENT_COLOR)}`
+=======
+                    `${style('Attempting to join voice channel:', '1;30')} \`${channel.name}\``
+>>>>>>> origin/main:commands/utility/joinVC.js
                 ]));
 
                 // Store last joined voice channel for auto-reconnect

@@ -37,6 +37,7 @@ export default {
 
                 const sortedCategories = Array.from(categories).sort();
                 const categoryDescriptions = {
+<<<<<<< HEAD:commands/general/help.js
                     ai: 'AI featured commands',
                     main: 'Exclusive commands',
                     utility: 'Utility commands',
@@ -65,6 +66,32 @@ export default {
                 const block1Lines = [
                     style('Barro', THEME.HEADER_BOLD_COLOR) + style(` Help Menu (Page ${safePage}/${totalPages})`, THEME.ACCENT_COLOR)
                 ];
+=======
+                    ai: 'AI assistance commands',
+                    fun: 'Fun & entertainment commands',
+                    general: 'General & config commands',
+                    main: 'Hacking & useful commands',
+                    media: 'Media & image commands',
+                    misc: 'Utility & misc commands',
+                    moderation: 'Moderation & server safety',
+                    nsfw: 'NSFW commands',
+                    server: 'Server management commands',
+                    settings: 'Settings & configuration',
+                    status: 'Status & statistics',
+                    tracking: 'Message tracking commands',
+                    utility: 'Utility commands',
+                    tools: 'Hacking tools'
+                };
+
+                const page1Keys = ['ai', 'main', 'utility', 'misc'];
+                const filteredCategories = page === 1
+                    ? sortedCategories.filter(cat => page1Keys.includes(cat))
+                    : sortedCategories.filter(cat => !page1Keys.includes(cat));
+
+                const block1 = formatAnsiBlock([
+                    style(`Barro v1.5` , `4;30`) + style(` Help Menu (Page ${page}/2)`, '0;34')
+                ]);
+>>>>>>> origin/main:commands/utility/help.js
 
                 const categoryRows = filteredCategories.map(category => {
                     let displayName = category;
@@ -78,19 +105,35 @@ export default {
 
                 const maxNameLength = categoryRows.reduce((max, cat) => Math.max(max, cat.displayName.length), 0);
 
+<<<<<<< HEAD:commands/general/help.js
                 const block2Lines = [style('Categories', THEME.HEADER_BOLD_COLOR)];
                 categoryRows.forEach(cat => {
                     const paddedName = cat.displayName.padEnd(maxNameLength, ' ');
                     block2Lines.push(
                         style(paddedName, THEME.LABEL_COLOR) + style(' | ', THEME.DIVIDER_COLOR) + style(cat.description, THEME.ACCENT_COLOR)
+=======
+                const block2Lines = [style('Categories', '4;30')];
+                categoryRows.forEach(cat => {
+                    const paddedName = cat.displayName.padEnd(maxNameLength, ' ');
+                    block2Lines.push(
+                        style(paddedName, '0;97') + style(' | ', '0;30') + style(cat.description, '0;34')
+>>>>>>> origin/main:commands/utility/help.js
                     );
                 });
 
+<<<<<<< HEAD:commands/general/help.js
                 const block3Lines = [
                     style('Usage', THEME.HEADER_BOLD_COLOR),
                     style('Category:', THEME.LABEL_COLOR) + ` ` + style(`${prefix}help <category> [page]`, THEME.ACCENT_COLOR),
                     style('Commands:', THEME.LABEL_COLOR) + ` ` + style(`${prefix}help <command>`, THEME.ACCENT_COLOR)
                 ];
+=======
+                const block3 = formatAnsiBlock([
+                    style('Usage', '4;30'),
+                    style('Category:', '0;97') + ` ` + style(`${prefix}help <category> [page]`, '0;34'),
+                    style('Commands:', '0;97') + ` ` + style(`${prefix}help <command>`, '0;34')
+                ]);
+>>>>>>> origin/main:commands/utility/help.js
 
                 return await message.channel.send(formatAnsiBlocks([
                     block1Lines,
@@ -108,12 +151,18 @@ export default {
                     );
 
                 if (!command) {
+<<<<<<< HEAD:commands/general/help.js
                     return await message.channel.send(formatAnsiBlock([
                         style(`ERROR: No command found with name or alias '${commandName}'`, THEME.ACCENT_COLOR)
+=======
+                    return message.channel.send(formatAnsiBlock([
+                        style(`ERROR: No command found with name or alias '${commandName}'`, '1;94')
+>>>>>>> origin/main:commands/utility/help.js
                     ]));
                 }
 
                 const lines = [
+<<<<<<< HEAD:commands/general/help.js
                     style('COMMAND INFO', THEME.DIVIDER_COLOR),
                     style('COMMAND:', THEME.LABEL_COLOR) + ' ' + style(command.name, THEME.ACCENT_COLOR)
                 ];
@@ -121,6 +170,32 @@ export default {
                 if (command.description) {
                     lines.push(style('DESCRIPTION:', THEME.LABEL_COLOR) + ' ' + style(compactWords(command.description), THEME.ACCENT_COLOR));
                 }
+=======
+                    style('COMMAND INFO', '0;30'),
+                    style('COMMAND:', '0;30') + ' ' + style(command.name, '0;34')
+                ];
+
+                if (command.description) {
+                    lines.push(style('DESCRIPTION:', '0;30') + ' ' + style(command.description, '0;34'));
+                }
+
+                if (command.aliases && command.aliases.length) {
+                    lines.push(style('ALIASES:', '0;30') + ' ' + style(command.aliases.join(', '), '0;34'));
+                }
+
+                if (command.usage) {
+                    lines.push(style('USAGE:', '0;30') + ' ' + style(`${prefix}${command.name} ${command.usage}`, '0;34'));
+                }
+
+                if (command.category) {
+                    lines.push(
+                        style('CATEGORY:', '1;97') + ' ' +
+                        style(command.category.charAt(0).toUpperCase() + command.category.slice(1), '0;34')
+                    );
+                }
+
+                lines.push(style('COOLDOWN:', '0;30') + ' ' + style(`${command.cooldown || 3}s`, '0;34'));
+>>>>>>> origin/main:commands/utility/help.js
 
                 if (command.aliases && command.aliases.length) {
                     lines.push(style('ALIASES:', THEME.LABEL_COLOR) + ' ' + style(command.aliases.join(', '), THEME.ACCENT_COLOR));
@@ -156,12 +231,32 @@ export default {
             });
 
             if (!categoryCommands.length) {
+<<<<<<< HEAD:commands/general/help.js
                 return await message.channel.send(formatAnsiBlock([
                     style(`ERROR: No category found with name '${categoryArg}'`, THEME.ACCENT_COLOR)
                 ]));
             }
 
             categoryCommands.sort((a, b) => a.name.localeCompare(b.name));
+=======
+                return message.channel.send(formatAnsiBlock([
+                    style(`ERROR: No category found with name '${categoryName}'`, '0;94')
+                ]));
+            }
+
+            categoryCommands.sort();
+            const displayCategoryName = categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
+            const lines = [
+                style(`${displayCategoryName.toUpperCase()} COMMANDS`, '0;30')
+            ];
+
+            const commandRows = formatCommandRows(categoryCommands, 2);
+            commandRows.forEach(row => lines.push(style(row, '0;34')));
+            lines.push(
+                style('USAGE:', '0;30'),
+                style(`  ${prefix}help ${prefix}<command>`, '0;34')
+            );
+>>>>>>> origin/main:commands/utility/help.js
 
             const commandsPerPage = 6;
             const totalPages = Math.ceil(categoryCommands.length / commandsPerPage);
@@ -204,12 +299,40 @@ export default {
         } catch (error) {
             console.error(chalk.red('[ERROR] Error in help command:'), error);
             message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/general/help.js
                 style('ERROR: An error occurred while displaying help.', THEME.ACCENT_COLOR)
+=======
+                style('ERROR: An error occurred while displaying help.', '0;94')
+>>>>>>> origin/main:commands/utility/help.js
             ]));
         }
     }
 };
 
+<<<<<<< HEAD:commands/general/help.js
+=======
+function style(text, colorCode) {
+    return `\u001b[${colorCode}m${text}\u001b[0m`;
+}
+
+function formatCommandRows(commands, perRow = 2) {
+    const maxLength = commands.reduce((max, cmd) => Math.max(max, cmd.length), 0);
+    const rows = [];
+
+    for (let i = 0; i < commands.length; i += perRow) {
+        const chunk = commands.slice(i, i + perRow);
+        const rowItems = chunk.map((item, index) => {
+            if (index === chunk.length - 1) {
+                return item;
+            }
+            return item.padEnd(maxLength, ' ');
+        });
+        rows.push(rowItems.join(' | '));
+    }
+
+    return rows;
+}
+>>>>>>> origin/main:commands/utility/help.js
 
 function formatAnsiBlock(lines) {
     return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');

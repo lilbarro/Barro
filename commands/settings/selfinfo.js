@@ -21,6 +21,7 @@ export default {
 
         async execute(client, message, args) {
         try {
+<<<<<<< HEAD
             if (args[0] && ['help', '--help', '-h'].includes(args[0].toLowerCase())) {
                 return message.channel.send(`> **Selfinfo Help**\n> Usage: \`${client.prefix}selfinfo\`\n> Aliases: \`${client.prefix}botinfo\`, \`${client.prefix}info\`, \`${client.prefix}stats\``);
             }
@@ -29,6 +30,12 @@ export default {
                 style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Info | Gathering data...`, THEME.ACCENT_COLOR)
             ]));
 
+=======
+            const statusMsg = await message.channel.send(formatAnsiBlock([
+                style(`Barro`, `4;30`) + style(` Info | Gathering data...`, '0;34')
+            ]));
+            
+>>>>>>> origin/main
             // Get system info
             const platform = os.platform();
             const arch = os.arch();
@@ -67,6 +74,7 @@ export default {
 
             // Format platform name
             const platformName = this.formatPlatformName(platform);
+<<<<<<< HEAD
 
             const block1 = formatAnsiBlock([
                 style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Selfbot Information`, THEME.ACCENT_COLOR)
@@ -74,6 +82,15 @@ export default {
 
             const block2 = formatAnsiBlock([
                 style('Performance', THEME.HEADER_BOLD_COLOR),
+=======
+            
+            const block1 = formatAnsiBlock([
+                style(`Barro`, `4;30`) + style(` Selfbot Information`, '0;34')
+            ]);
+
+            const block2 = formatAnsiBlock([
+                style('Performance', '4;30'),
+>>>>>>> origin/main
                 kv('Latency', `${ping}ms`, 12),
                 kv('Memory', `${memoryMB.heapUsed}MB / ${memoryMB.heapTotal}MB`, 12),
                 kv('CPU Usage', `~${cpuPercent}%`, 12),
@@ -81,26 +98,39 @@ export default {
             ]);
 
             const block3 = formatAnsiBlock([
+<<<<<<< HEAD
                 style('System', THEME.HEADER_BOLD_COLOR),
+=======
+                style('System', '4;30'),
+>>>>>>> origin/main
                 kv('Platform', platformName, 12),
                 kv('Arch', arch, 12),
                 kv('Node.js', nodeVersion, 12)
             ]);
 
             const block4 = formatAnsiBlock([
+<<<<<<< HEAD
                 style('Statistics', THEME.HEADER_BOLD_COLOR),
+=======
+                style('Statistics', '4;30'),
+>>>>>>> origin/main
                 kv('Commands', commandCount, 12),
                 kv('Events', eventCount, 12),
                 kv('Lines', linesOfCode, 12)
             ]);
 
             const block5 = formatAnsiBlock([
+<<<<<<< HEAD
                 style('Identity', THEME.HEADER_BOLD_COLOR),
+=======
+                style('Identity', '4;30'),
+>>>>>>> origin/main
                 kv('Prefix', client.prefix, 12),
                 kv('User', client.user.tag, 12),
                 kv('ID', client.user.id, 12)
             ]);
 
+<<<<<<< HEAD
             await statusMsg.edit(formatAnsiBlocks([block1, block2, block3, block4, block5]));
 
         } catch (error) {
@@ -108,6 +138,15 @@ export default {
             await message.channel.send(formatAnsiBlock([
                 style(`ERROR: Failed to generate info`, THEME.ACCENT_COLOR),
                 style(error.message, THEME.LABEL_COLOR)
+=======
+            await statusMsg.edit([block1, block2, block3, block4, block5].join('\n'));
+            
+        } catch (error) {
+            log(`Error generating selfinfo: ${error.message}`, 'error');
+            await message.channel.send(formatAnsiBlock([
+                style(`ERROR: Failed to generate info`, `1;94`),
+                style(error.message, '0;34')
+>>>>>>> origin/main
             ]));
         }
     },
@@ -214,7 +253,22 @@ export default {
     }
 };
 
+<<<<<<< HEAD
 function kv(label, value, padTo) {
     const padded = String(label).padEnd(padTo, ' ');
     return style(padded, THEME.LABEL_COLOR) + style(' | ', THEME.DIVIDER_COLOR) + style(String(value), THEME.ACCENT_COLOR);
 }
+=======
+function style(text, colorCode) {
+    return `\u001b[${colorCode}m${text}\u001b[0m`;
+}
+
+function formatAnsiBlock(lines) {
+    return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+}
+
+function kv(label, value, padTo) {
+    const padded = String(label).padEnd(padTo, ' ');
+    return style(padded, '0;97') + style(' | ', '0;30') + style(String(value), '0;34');
+}
+>>>>>>> origin/main

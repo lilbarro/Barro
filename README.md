@@ -48,31 +48,51 @@ The useful parts of Barro are easier to understand by category:
 ```yaml
 AI featured commands:
   commands: |  ask, aireply, aiafk
+<<<<<<< HEAD
   purpose:      |  Questions, automatic replies, and away responses
+=======
+  purpose:  |  Questions, automatic replies, and away responses
+>>>>>>> origin/main
 ```
 
 ```yaml
 Exclusive commands:
   commands: |  quest, wl, snipe, editsnipe
+<<<<<<< HEAD
   purpose:      |  Quests, access control, and message recovery
+=======
+  purpose:  |  Quests, access control, and message recovery
+>>>>>>> origin/main
 ```
 
 ```yaml
 Theme commands:
   commands: |  accent, header, label, divider, text
+<<<<<<< HEAD
   purpose:      |  Tune the colors behind every response
+=======
+  purpose:  |  Tune the colors behind every response
+>>>>>>> origin/main
 ```
 
 ```yaml
 Status commands:
   commands: |  status, rpc, spoof, savepresence
+<<<<<<< HEAD
   purpose:      |  Shape how your account appears on Discord
+=======
+  purpose:  |  Shape how your account appears on Discord
+>>>>>>> origin/main
 ```
 
 ```yaml
 General commands:
   commands: |  afk, avatar, banner, serverinfo, todo
+<<<<<<< HEAD
   purpose:      |  Everyday account tools for quick Discord tasks
+=======
+  purpose:  |  Everyday account tools for quick Discord tasks
+>>>>>>> origin/main
 ```
 
 ## Made For Daily Use

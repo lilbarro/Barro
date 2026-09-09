@@ -58,7 +58,11 @@ export default {
 
       // Send confirmation message
       const statusMsg = await message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/troll/spam.js
         ...formatRows([['Status', 'Starting']], '37')
+=======
+        ...formatRows([['Status', 'Starting']], '0;97')
+>>>>>>> origin/main:commands/main/spam.js
       ]));
 
       let sentCount = 0;
@@ -136,7 +140,11 @@ export default {
       if (!isCancelled) {
         statusMsg
           .edit(formatAnsiBlock([
+<<<<<<< HEAD:commands/troll/spam.js
             ...formatRows([['Status', 'Complete']], '37')
+=======
+            ...formatRows([['Status', 'Complete']], '0;97')
+>>>>>>> origin/main:commands/main/spam.js
           ]))
           .then((msg) => {
             // Always use regular setTimeout since task will be destroyed in finally block
@@ -156,7 +164,11 @@ export default {
     } catch (error) {
       log(`Error in spam command: ${error.message}`, "error");
       message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/troll/spam.js
         ...formatRows([['Result', `An error occurred during spam: ${error.message}`]], '37')
+=======
+        ...formatRows([['Result', `An error occurred during spam: ${error.message}`]], '0;97')
+>>>>>>> origin/main:commands/main/spam.js
       ]));
     } finally {
       // Clean up task
@@ -191,5 +203,18 @@ function formatThreeBlock(title, block2Rows, block3Rows) {
     formatRows(block2Rows),
     formatRows(block3Rows)
   ]);
+}
+
+function formatRows(rows, valueColor = '0;34') {
+  const width = rows.reduce((max, [label]) => Math.max(max, label.length), 0);
+  return rows.map(([label, value]) => style(label.padEnd(width, ' '), '0;97') + style(' | ', '0;30') + style(value, valueColor));
+}
+
+function formatThreeBlock(title, block2Rows, block3Rows) {
+  return [
+    formatAnsiBlock([style(title, '0;30')]),
+    formatAnsiBlock(formatRows(block2Rows)),
+    formatAnsiBlock(formatRows(block3Rows))
+  ].join('\n');
 }
 

@@ -36,7 +36,11 @@ export default {
 
             const statusMsg = await message.channel.send(
         formatAnsiBlock([
+<<<<<<< HEAD
           style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | Initializing...`, THEME.ACCENT_COLOR)
+=======
+          style(`Barro`, `4;30`) + style(` Backup | Initializing...`, '0;34')
+>>>>>>> origin/main
         ])
       );
 
@@ -44,8 +48,13 @@ export default {
 
       await statusMsg.edit(
         formatAnsiBlock([
+<<<<<<< HEAD
           style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | Collecting data`, THEME.ACCENT_COLOR),
           style(`Status: `, THEME.LABEL_COLOR) + style(`Collecting friends...`, THEME.ACCENT_COLOR)
+=======
+          style(`Barro`, `4;30`) + style(` Backup | Collecting data`, '0;34'),
+          style(`Status: `, '0;97') + style(`Collecting friends...`, '0;34')
+>>>>>>> origin/main
         ])
       );
 
@@ -53,9 +62,15 @@ export default {
 
       await statusMsg.edit(
         formatAnsiBlock([
+<<<<<<< HEAD
           style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | Collecting data`, THEME.ACCENT_COLOR),
           style(`Status: `, THEME.LABEL_COLOR) + style(`Friends collected.`, '0;32'),
           style(`Action: `, THEME.LABEL_COLOR) + style(`Collecting servers...`, THEME.ACCENT_COLOR)
+=======
+          style(`Barro`, `4;30`) + style(` Backup | Collecting data`, '0;34'),
+          style(`Status: `, '0;97') + style(`Friends collected.`, '0;32'),
+          style(`Action: `, '0;97') + style(`Collecting servers...`, '0;34')
+>>>>>>> origin/main
         ])
       );
 
@@ -63,9 +78,15 @@ export default {
 
       await statusMsg.edit(
         formatAnsiBlock([
+<<<<<<< HEAD
           style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | Saving data`, THEME.ACCENT_COLOR),
           style(`Status: `, THEME.LABEL_COLOR) + style(`Servers collected.`, '0;32'),
           style(`Action: `, THEME.LABEL_COLOR) + style(`Writing to file...`, THEME.ACCENT_COLOR)
+=======
+          style(`Barro`, `4;30`) + style(` Backup | Saving data`, '0;34'),
+          style(`Status: `, '0;97') + style(`Servers collected.`, '0;32'),
+          style(`Action: `, '0;97') + style(`Writing to file...`, '0;34')
+>>>>>>> origin/main
         ])
       );
 
@@ -78,11 +99,19 @@ export default {
       const fileSizeKB = Math.round(stats.size / 1024);
 
       const block1 = formatAnsiBlock([
+<<<<<<< HEAD
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup Success`, THEME.ACCENT_COLOR)
       ]);
 
       const block2 = formatAnsiBlock([
         style('Backup Statistics', THEME.HEADER_BOLD_COLOR),
+=======
+        style(`Barro`, `4;30`) + style(` Backup Success`, '0;32')
+      ]);
+
+      const block2 = formatAnsiBlock([
+        style('Backup Statistics', '4;30'),
+>>>>>>> origin/main
         kv('Name', backupName, 14),
         kv('Friends', backupData.statistics.total_friends, 14),
         kv('Servers', backupData.statistics.total_servers, 14),
@@ -91,6 +120,7 @@ export default {
       ]);
 
       const block3 = formatAnsiBlock([
+<<<<<<< HEAD
         style('Location', THEME.HEADER_BOLD_COLOR),
         style(`data/backups/${backupName}.json`, THEME.ACCENT_COLOR),
         '',
@@ -98,6 +128,15 @@ export default {
       ]);
 
       await statusMsg.edit(formatAnsiBlocks([block1, block2, block3]));
+=======
+        style('Location', '4;30'),
+        style(`data/backups/${backupName}.json`, '0;34'),
+        '',
+        style('Usage:', '0;97') + ' ' + style(`${client.prefix}view ${backupName}`, '0;34')
+      ]);
+
+      await statusMsg.edit([block1, block2, block3].join('\n'));
+>>>>>>> origin/main
 
       log(
         `Backup created: ${backupName} - Friends: ${backupData.statistics.total_friends}, Servers: ${backupData.statistics.total_servers}`,
@@ -106,8 +145,13 @@ export default {
     } catch (error) {
       log(`Error creating backup: ${error.message}`, "error");
       await message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD
         style(`ERROR: Backup creation failed!`, THEME.ACCENT_COLOR),
         style(error.message, THEME.ACCENT_COLOR)
+=======
+        style(`ERROR: Backup creation failed!`, '1;94'),
+        style(error.message, '0;34')
+>>>>>>> origin/main
       ]));
     }
   },
@@ -169,6 +213,10 @@ function formatAnsiBlock(lines) {
 
 function kv(label, value, padTo) {
   const padded = String(label).padEnd(padTo, ' ');
+<<<<<<< HEAD
   return style(padded, THEME.LABEL_COLOR) + style(' | ', THEME.DIVIDER_COLOR) + style(String(value), THEME.ACCENT_COLOR);
+=======
+  return style(padded, '0;97') + style(' | ', '0;30') + style(String(value), '0;34');
+>>>>>>> origin/main
 }
 

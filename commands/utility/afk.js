@@ -28,19 +28,32 @@ export default {
             writeAfkData(afkData);
 
             await message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/general/afk.js
               style('[ AFK ]', THEME.HEADER_BOLD_COLOR, true),
               '',
               style('STATUS:', THEME.LABEL_COLOR) + ' ' + style('You are now AFK.', THEME.ACCENT_COLOR),
               style('REASON:', THEME.LABEL_COLOR) + ' ' + style(reason, THEME.ACCENT_COLOR)
+=======
+              style('[ AFK ]', '0;30'),
+              '',
+              style('STATUS:', '0;34') + ' ' + style('You are now AFK.', '0;97'),
+              style('REASON:', '0;34') + ' ' + style(reason, '0;97')
+>>>>>>> origin/main:commands/utility/afk.js
             ]));
             log(`${message.author.tag} is now AFK. Reason: ${reason}`, 'info');
 
         } catch (error) {
             console.error('[ERROR] Error in afk command:', error);
             message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/general/afk.js
               style('[ AFK ]', THEME.HEADER_BOLD_COLOR, true),
               '',
               style('ERROR:', THEME.LABEL_COLOR) + ' ' + style('An error occurred while setting your AFK status.', THEME.ACCENT_COLOR)
+=======
+              style('[ AFK ]', '0;30'),
+              '',
+              style('ERROR:', '0;34') + ' ' + style('An error occurred while setting your AFK status.', '0;97')
+>>>>>>> origin/main:commands/utility/afk.js
             ]));
         }
     }

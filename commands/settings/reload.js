@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 import { log, loadConfig, style, formatAnsiBlock, formatAnsiBlocks } from "../../utils/functions.js";
 import { THEME } from "../../utils/theme.js";
+=======
+import { log, loadConfig } from "../../utils/functions.js";
+>>>>>>> origin/main
 import TaskManager from "../../utils/TaskManager.js";
 import { loadCommands } from "../../handlers/CommandHandler.js";
 import { loadEvents } from "../../handlers/EventsHandler.js";
@@ -11,7 +15,12 @@ const __dirname = path.dirname(__filename);
 
 export default {
   name: "reload",
+<<<<<<< HEAD
   description: "Reload bot modules",
+=======
+  description:
+    "Completely reload the selfbot by cleaning up tasks, clearing caches, and reloading all modules",
+>>>>>>> origin/main
   aliases: ["refresh", "restart", "reloadall"],
   usage: "reload",
   category: "settings",
@@ -19,69 +28,112 @@ export default {
   permissions: ["SendMessages"],
   cooldown: 10,
 
+<<<<<<< HEAD
   async execute(client, message, args) {
     if (args[0] && ["help", "--help", "-h"].includes(args[0].toLowerCase())) {
       return message.channel.send(`> **Reload Help**\n> Usage: \`${client.prefix}reload\`\n> Aliases: \`${client.prefix}refresh\`, \`${client.prefix}restart\`, \`${client.prefix}reloadall\``);
     }
 
+=======
+  async execute(client, message, _) {
+>>>>>>> origin/main
     const startTime = Date.now();
     let statusMsg;
 
     try {
       // Send initial status message
       statusMsg = await message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Reload | Initializing...`, THEME.ACCENT_COLOR)
+=======
+        style(`Barro`, `4;30`) + style(` Reload | Initializing...`, '0;34')
+>>>>>>> origin/main
       ]));
 
       // Step 1: Force stop ALL active tasks immediately
       await statusMsg.edit(formatAnsiBlock([
+<<<<<<< HEAD
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Reload | Stopping tasks`, THEME.ACCENT_COLOR),
         style(`>> Terminating active processes...`, THEME.LABEL_COLOR)
+=======
+        style(`Barro`, `4;30`) + style(` Reload | Stopping tasks`, '0;34'),
+        style(`>> Terminating active processes...`, '0;97')
+>>>>>>> origin/main
       ]));
 
       const taskStats = await this.forceStopAllTasks();
 
       // Step 2: Clear Node.js module cache
       await statusMsg.edit(formatAnsiBlock([
+<<<<<<< HEAD
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Reload | Cleaning cache`, THEME.ACCENT_COLOR),
         style(`>> Tasks stopped: ${taskStats.stopped}`, '0;32'),
         style(`>> Clearing memory...`, THEME.LABEL_COLOR)
+=======
+        style(`Barro`, `4;30`) + style(` Reload | Cleaning cache`, '0;34'),
+        style(`>> Tasks stopped: ${taskStats.stopped}`, '0;32'),
+        style(`>> Clearing memory...`, '0;97')
+>>>>>>> origin/main
       ]));
 
       const cacheStats = this.clearModuleCache();
 
       // Step 3: Clear all client collections and data
       await statusMsg.edit(formatAnsiBlock([
+<<<<<<< HEAD
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Reload | Clearing data`, THEME.ACCENT_COLOR),
         style(`>> Cache cleared.`, '0;32'),
         style(`>> Resetting collections...`, THEME.LABEL_COLOR)
+=======
+        style(`Barro`, `4;30`) + style(` Reload | Clearing data`, '0;34'),
+        style(`>> Cache cleared.`, '0;32'),
+        style(`>> Resetting collections...`, '0;97')
+>>>>>>> origin/main
       ]));
 
       this.clearClientCollections(client);
 
       // Step 4: Reload commands with detailed tracking
       await statusMsg.edit(formatAnsiBlock([
+<<<<<<< HEAD
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Reload | Commands`, THEME.ACCENT_COLOR),
         style(`>> Collections reset.`, '0;32'),
         style(`>> Loading command files...`, THEME.LABEL_COLOR)
+=======
+        style(`Barro`, `4;30`) + style(` Reload | Commands`, '0;34'),
+        style(`>> Collections reset.`, '0;32'),
+        style(`>> Loading command files...`, '0;97')
+>>>>>>> origin/main
       ]));
 
       const commandStats = await this.reloadCommands(client);
 
       // Step 5: Reload events with detailed tracking
       await statusMsg.edit(formatAnsiBlock([
+<<<<<<< HEAD
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Reload | Events`, THEME.ACCENT_COLOR),
         style(`>> Commands loaded: ${commandStats.loaded}`, '0;32'),
         style(`>> Loading event files...`, THEME.LABEL_COLOR)
+=======
+        style(`Barro`, `4;30`) + style(` Reload | Events`, '0;34'),
+        style(`>> Commands loaded: ${commandStats.loaded}`, '0;32'),
+        style(`>> Loading event files...`, '0;97')
+>>>>>>> origin/main
       ]));
 
       const eventStats = await this.reloadEvents(client);
 
       // Step 6: Reinitialize critical systems
       await statusMsg.edit(formatAnsiBlock([
+<<<<<<< HEAD
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Reload | Systems`, THEME.ACCENT_COLOR),
         style(`>> Events loaded: ${eventStats.loaded}`, '0;32'),
         style(`>> Reinitializing core...`, THEME.LABEL_COLOR)
+=======
+        style(`Barro`, `4;30`) + style(` Reload | Systems`, '0;34'),
+        style(`>> Events loaded: ${eventStats.loaded}`, '0;32'),
+        style(`>> Reinitializing core...`, '0;97')
+>>>>>>> origin/main
       ]));
 
       await this.reinitializeSystems(client);
@@ -99,11 +151,19 @@ export default {
       );
 
       const block1 = formatAnsiBlock([
+<<<<<<< HEAD
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Reload Complete`, THEME.ACCENT_COLOR)
       ]);
 
       const block2 = formatAnsiBlock([
         style('Reload Statistics', THEME.HEADER_BOLD_COLOR),
+=======
+        style(`Barro`, `4;30`) + style(` Reload Complete`, '0;32')
+      ]);
+
+      const block2 = formatAnsiBlock([
+        style('Reload Statistics', '4;30'),
+>>>>>>> origin/main
         kv('Tasks', taskStats.stopped, 12),
         kv('Commands', commandStats.loaded, 12),
         kv('Events', eventStats.loaded, 12),
@@ -112,11 +172,19 @@ export default {
       ]);
 
       const block3 = formatAnsiBlock([
+<<<<<<< HEAD
         style('Status', THEME.HEADER_BOLD_COLOR),
         style(`All systems operational.`, THEME.ACCENT_COLOR)
       ]);
 
       await statusMsg.edit(formatAnsiBlocks([block1, block2, block3]));
+=======
+        style('Status', '4;30'),
+        style(`All systems operational.`, '0;34')
+      ]);
+
+      await statusMsg.edit([block1, block2, block3].join('\n'));
+>>>>>>> origin/main
 
       log(
         `Complete selfbot reload finished in ${reloadTime}ms - ` +
@@ -137,10 +205,17 @@ export default {
 
       try {
         await (statusMsg || message.channel).send(formatAnsiBlock([
+<<<<<<< HEAD
           style(`ERROR: Critical reload failure`, THEME.ACCENT_COLOR),
           style(error.message, THEME.LABEL_COLOR),
           '',
           style('Check console for details.', THEME.DIVIDER_COLOR)
+=======
+          style(`ERROR: Critical reload failure`, `1;94`),
+          style(error.message, '0;34'),
+          '',
+          style('Check console for details.', '0;30')
+>>>>>>> origin/main
         ]));
       } catch (sendError) {
         log(
@@ -326,8 +401,11 @@ export default {
     }
   },
 };
+<<<<<<< HEAD
 
 function kv(label, value, padTo) {
     const padded = String(label).padEnd(padTo, ' ');
     return style(padded, THEME.LABEL_COLOR) + style(' | ', THEME.DIVIDER_COLOR) + style(String(value), THEME.ACCENT_COLOR);
 }
+=======
+>>>>>>> origin/main

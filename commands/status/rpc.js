@@ -1,6 +1,10 @@
 export default {
     name: 'rpc',
+<<<<<<< HEAD
     description: "Manage custom rich presence",
+=======
+    description: "Manages the bot's Rich Presence with comprehensive customization",
+>>>>>>> origin/main
     aliases: ['richpresence', 'presence'],
     usage: '<enable|disable|setType|setURL|setState|setName|setDetails|setParty|setStartTimestamp|setEndTimestamp|view|reset>',
     category: 'status',
@@ -113,7 +117,11 @@ export default {
 > • \`${client.prefix}rpc setURL https://twitch.tv/example\`
 > • \`${client.prefix}rpc setParty 1 9\`
 > • \`${client.prefix}rpc setLargeImage 929325841350000660\`
+<<<<<<< HEAD
 > • \`${client.prefix}rpc addButton "Visit GitHub" https://github.com/faiz4sure/Barro\`
+=======
+> • \`${client.prefix}rpc addButton "Visit GitHub" https://github.com/lilbarro/Barro\`
+>>>>>>> origin/main
 > • \`${client.prefix}rpc setStartTimestamp ${Date.now()}\``;
         
         return message.channel.send(helpText);
@@ -546,7 +554,11 @@ export default {
 
     async addButton(client, message, args) {
         if (args.length < 2) {
+<<<<<<< HEAD
             return message.channel.send("> ❌ **Usage:** `+rpc addButton <label> <url>`\nExample: `+rpc addButton \"Visit GitHub\" https://github.com/faiz4sure/Barro`");
+=======
+            return message.channel.send("> ❌ **Usage:** `+rpc addButton <label> <url>`\nExample: `+rpc addButton \"Visit GitHub\" https://github.com/lilbarro/Barro`");
+>>>>>>> origin/main
         }
 
         // Smart parsing: find the URL (must start with http:// or https://)
@@ -623,7 +635,11 @@ export default {
                     type: "PLAYING",
                     name: "Barro Selfbot",
                     details: "Summoning Silence",
+<<<<<<< HEAD
                     state: "github.com/faiz4sure",
+=======
+                    state: "github.com/lilbarro",
+>>>>>>> origin/main
                     url: "",
                     party: {
                         current: 1,
@@ -643,7 +659,11 @@ export default {
                     buttons: [
                         {
                             label: "GitHub",
+<<<<<<< HEAD
                             url: "https://github.com/faiz4sure/Barro"
+=======
+                            url: "https://github.com/lilbarro/Barro"
+>>>>>>> origin/main
                         },
                         {
                             label: "Support",

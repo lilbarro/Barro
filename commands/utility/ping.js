@@ -44,12 +44,21 @@ export default {
             
             // Create a formatted response with quote blocks
             const response = [
+<<<<<<< HEAD:commands/general/ping.js
                 `> 🏓 ${style('Pong!', THEME.HEADER_BOLD_COLOR, true)}`,
                 '> ',
                 `> ${getLatencyEmoji(latency)} ${style('Message Latency:', THEME.LABEL_COLOR)} ${style(latency + 'ms', THEME.ACCENT_COLOR)}`,
                 `> ${getLatencyEmoji(apiLatency)} ${style('API Latency:', THEME.LABEL_COLOR)} ${style(apiLatency + 'ms', THEME.ACCENT_COLOR)}`,
                 '> ',
                 `> ⏱️ ${style('Uptime:', THEME.LABEL_COLOR)} ${style(uptime, THEME.ACCENT_COLOR)}`
+=======
+                `> 🏓 ${style('Pong!', '4;30')}`,
+                '> ',
+                `> ${getLatencyEmoji(latency)} ${style('Message Latency:', '0;97')} ${latency}ms`,
+                `> ${getLatencyEmoji(apiLatency)} ${style('API Latency:', '0;97')} ${apiLatency}ms`,
+                '> ',
+                `> ⏱️ ${style('Uptime:', '0;34')} ${uptime}`
+>>>>>>> origin/main:commands/utility/ping.js
             ];
             
             // Edit the initial message with the results

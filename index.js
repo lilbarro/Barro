@@ -14,11 +14,16 @@ import { setupRateLimit } from "./handlers/RateLimitHandler.js";
 import { loadConfig, clearConsole, log, wait, style, loadJSONAsync, saveJSONAsync } from "./utils/functions.js";
 import { getUserPrefix } from "./utils/userPrefixManager.js";
 import TaskManager from "./utils/TaskManager.js";
-import { initNitroSniper } from "./commands/general/nitrosniper.js";
+import { initNitroSniper } from "./commands/fun/nitrosniper.js";
 
 let isShuttingDown = false;
+<<<<<<< HEAD
 let clients = [];
 let isLoggedIn = false; // True if at least one client is connected
+=======
+let client = null;
+let isLoggedIn = false;
+>>>>>>> origin/main
 let logoutCooldownTimer = 0;
 let logoutCooldownActive = false;
 
@@ -26,12 +31,25 @@ let logoutCooldownActive = false;
 // STYLING & FORMATTING HELPERS
 // ============================================
 
+<<<<<<< HEAD
 function displaySimpleMenu() {
   console.log('\n' + style('Available Commands:', '0;36'));
   console.log(style('login', '1;37') + '    | Start all bots');
   console.log(style('logout', '1;37') + '   | Turn off all bots');
   console.log(style('restart', '1;37') + '  | Restart all bots');
   console.log(style('status', '1;37') + '   | Check the status of bots');
+=======
+function style(text, colorCode) {
+  return `\u001b[${colorCode}m${text}\u001b[0m`;
+}
+
+function displaySimpleMenu() {
+  console.log('\n' + style('Available Commands:', '0;36'));
+  console.log(style('login', '1;37') + '    | Start the bot');
+  console.log(style('logout', '1;37') + '   | Turn the bot off');
+  console.log(style('restart', '1;37') + '  | Restart the bot');
+  console.log(style('status', '1;37') + '   | Check the status of bot');
+>>>>>>> origin/main
   console.log(style('exit', '1;37') + '     | Exit the terminal\n');
 }
 
@@ -46,6 +64,10 @@ async function setupTracking(client) {
 
   client.on('userUpdate', async (oldUser, newUser) => {
     try {
+<<<<<<< HEAD
+=======
+      // Fetch full profile to get banner
+>>>>>>> origin/main
       let fullOldUser = oldUser;
       let fullNewUser = newUser;
 
@@ -211,16 +233,27 @@ function getLogoutStatus() {
   return logoutCooldownTimer;
 }
 
+<<<<<<< HEAD
 async function loginBots(clients, config) {
   if (isLoggedIn) {
     console.log(style('At least one bot is already connected to Discord', '1;33'));
+=======
+async function loginBot(discordClient, config) {
+  if (isLoggedIn) {
+    console.log(style('Already connected to Discord', '1;33'));
+>>>>>>> origin/main
     return;
   }
 
   if (logoutCooldownActive) {
     console.log(style(`Login blocked for ${logoutCooldownTimer}s to avoid rate limiting...`, '1;33'));
     console.log(style('Waiting before auto-login...', '0;36'));
+<<<<<<< HEAD
 
+=======
+    
+    // Wait for cooldown to finish
+>>>>>>> origin/main
     while (logoutCooldownTimer > 0) {
       await new Promise(r => setTimeout(r, 1000));
     }
@@ -228,6 +261,7 @@ async function loginBots(clients, config) {
   }
 
   try {
+<<<<<<< HEAD
     console.log(style('Connecting all accounts to Discord...', '0;36'));
 
     for (let i = 0; i < clients.length; i++) {
@@ -268,10 +302,35 @@ async function loginBots(clients, config) {
 async function logoutBots(clients, config) {
   if (!isLoggedIn && clients.length === 0) {
     console.log(style('No bots connected to Discord', '1;33'));
+=======
+    console.log(style('Connecting to Discord...', '0;36'));
+    await discordClient.login(config.selfbot.token);
+    isLoggedIn = true;
+    console.log(style('Connected successfully', '0;32'));
+
+    if (config.nitro_sniper?.enabled !== false) {
+      try {
+        initNitroSniper(discordClient);
+        log("Nitro sniper initialized", "debug");
+      } catch (err) {
+        log(`Warning: Failed to initialize Nitro sniper: ${err.message}`, "warn");
+      }
+    }
+  } catch (err) {
+    isLoggedIn = false;
+    console.log(style(`Connection failed: ${err.message}`, '1;31'));
+  }
+}
+
+async function logoutBot(discordClient, config) {
+  if (!isLoggedIn) {
+    console.log(style('Not connected to Discord', '1;33'));
+>>>>>>> origin/main
     return;
   }
 
   try {
+<<<<<<< HEAD
     console.log(style('Disconnecting all bots from Discord...', '0;36'));
 
     for (let i = 0; i < clients.length; i++) {
@@ -336,13 +395,72 @@ async function restartBots(clients, config) {
   }
 
   await loginBots(clients, config);
+=======
+    console.log(style('Disconnecting from Discord...', '0;36'));
+    await discordClient.destroy();
+    isLoggedIn = false;
+
+    // Simulate human-like slow shutdown (5-15 seconds)
+    const shutdownTime = Math.random() * 10 + 5; // 5-15 seconds
+    console.log(style(`Cleaning up (${Math.round(shutdownTime)}s)...`, '0;33'));
+
+    await new Promise(r => setTimeout(r, shutdownTime * 1000));
+    
+    console.log(style('Disconnected successfully', '0;32'));
+    
+    // Start cooldown timer
+    startLogoutCooldown();
+
+    // Reinitialize client for next login
+    discordClient = new Client({
+      checkUpdate: false,
+      autoRedeemNitro: true,
+      relationshipSweepInterval: 60,
+      restRequestTimeout: 60000,
+      ws: {
+        properties: {
+          $browser: config.client_properties?.browser || "Discord Client",
+        },
+      },
+    });
+
+    discordClient.config = config;
+    discordClient.prefix = config.selfbot.prefix;
+    discordClient.noprefix = false;
+    discordClient.commands = new Map();
+    discordClient.cooldowns = new Map();
+
+    setupAntiCrash(discordClient);
+    setupRateLimit(discordClient);
+
+    client = discordClient;
+  } catch (err) {
+    console.log(style(`Disconnect failed: ${err.message}`, '1;31'));
+  }
+}
+
+async function restartBot(discordClient, config) {
+  console.log(style('Restarting bot...', '0;36'));
+  await logoutBot(discordClient, config);
+  
+  // Wait for cooldown
+  while (logoutCooldownTimer > 0) {
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  
+  await loginBot(discordClient, config);
+>>>>>>> origin/main
 }
 
 // ============================================
 // TERMINAL INTERFACE SETUP
 // ============================================
 
+<<<<<<< HEAD
 function setupTerminalInterface(clients, config) {
+=======
+function setupTerminalInterface(discordClient, config) {
+>>>>>>> origin/main
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -356,6 +474,7 @@ function setupTerminalInterface(clients, config) {
 
       switch (command) {
         case 'login':
+<<<<<<< HEAD
           await loginBots(clients, config);
           break;
 
@@ -365,10 +484,22 @@ function setupTerminalInterface(clients, config) {
 
         case 'restart':
           await restartBots(clients, config);
+=======
+          await loginBot(discordClient, config);
+          break;
+
+        case 'logout':
+          await logoutBot(discordClient, config);
+          break;
+
+        case 'restart':
+          await restartBot(discordClient, config);
+>>>>>>> origin/main
           break;
 
         case 'status':
           console.log('');
+<<<<<<< HEAD
           if (clients.length === 0) {
             console.log(style('No bots configured', '1;31'));
           } else {
@@ -381,6 +512,17 @@ function setupTerminalInterface(clients, config) {
                 console.log(style(`${accLabel} Account: `, '0;36') + client.user.username);
               }
             });
+=======
+          if (isLoggedIn) {
+            console.log(style('Status: ', '0;36') + style('Connected', '0;32'));
+            console.log(style('Account: ', '0;36') + (discordClient.user?.username || 'Unknown'));
+            console.log(style('Prefix: ', '0;36') + config.selfbot.prefix);
+          } else {
+            console.log(style('Status: ', '0;36') + style('Disconnected', '1;31'));
+            if (logoutCooldownActive) {
+              console.log(style('Cooldown: ', '0;36') + `${logoutCooldownTimer}s remaining`);
+            }
+>>>>>>> origin/main
           }
           console.log('');
           break;
@@ -421,11 +563,16 @@ async function gracefulShutdown(signal, exitCode = 0, rl = null) {
       rl.close();
     }
     await TaskManager.cleanup();
+<<<<<<< HEAD
 
     for (const client of clients) {
       if (client?.destroy) {
         await client.destroy();
       }
+=======
+    if (client?.destroy) {
+      await client.destroy();
+>>>>>>> origin/main
     }
     log("Shutdown completed", "success");
   } catch (error) {
@@ -440,7 +587,11 @@ async function gracefulShutdown(signal, exitCode = 0, rl = null) {
 // SIGNAL HANDLERS
 // ============================================
 
+<<<<<<< HEAD
 function setupSignalHandlers() {
+=======
+function setupSignalHandlers(discordClient) {
+>>>>>>> origin/main
   const handleSignal = async (signal, exitCode = 0) => {
     await gracefulShutdown(signal, exitCode);
   };
@@ -467,6 +618,7 @@ async function initializeSelfbot() {
     log("Loading configuration...", "info");
     const config = loadConfig();
 
+<<<<<<< HEAD
     const accounts = config.selfbot.accounts || (config.selfbot.token ? [{ token: config.selfbot.token }] : []);
     if (accounts.length === 0) {
       console.error(chalk.red("\n[TOKEN ERROR] No accounts provided in config.yaml."));
@@ -522,6 +674,27 @@ async function initializeSelfbot() {
       setupRateLimit(client);
 
       return client;
+=======
+    log("Validating Discord token...", "info");
+    const tokenValidation = validateToken(config.selfbot?.token);
+
+    if (!tokenValidation.isValid) {
+      console.error(chalk.red("\n[TOKEN ERROR] " + tokenValidation.error));
+      process.exit(1);
+    }
+
+    log("Initializing Discord client...", "info");
+    client = new Client({
+      checkUpdate: false,
+      autoRedeemNitro: true,
+      relationshipSweepInterval: 60,
+      restRequestTimeout: 60000,
+      ws: {
+        properties: {
+          $browser: config.client_properties?.browser || "Discord Client",
+        },
+      },
+>>>>>>> origin/main
     });
 
     log("Commands", "info");
@@ -550,6 +723,7 @@ async function initializeSelfbot() {
 
     // displayBanner(); // Disabled to reduce terminal noise
 
+<<<<<<< HEAD
 
     console.log(style('\nBot initialized and ready', '0;36'));
 
@@ -563,11 +737,34 @@ async function initializeSelfbot() {
       for (const client of clients) {
         setupTracking(client);
       }
+=======
+    // Don't auto-login - wait for user command instead
+    console.log(style('\nBot initialized and ready', '0;36'));
+
+    isLoggedIn = false;
+
+    // Step 9: Initialize additional features (but don't start them yet)
+    log("Initializing additional features...", "debug");
+
+    try {
+      // Initialize Nitro sniper if enabled (but don't activate until logged in)
+      if (config.nitro_sniper?.enabled !== false) {
+        log("Nitro sniper ready (will activate on login)", "debug");
+      }
+
+      // ✅ START TRACKING PFP, USERNAME AND BANNER (will work after login)
+      setupTracking(client);
+
+>>>>>>> origin/main
     } catch (featureError) {
       log(`Warning: Failed to initialize some features: ${featureError.message}`, "warn");
     }
 
+<<<<<<< HEAD
     log(`Multi-account initialization completed successfully! (${clients.length} accounts)`, "debug");
+=======
+    log("Selfbot initialization completed successfully!", "debug");
+>>>>>>> origin/main
 
     return config;
   } catch (error) {
@@ -582,9 +779,15 @@ async function initializeSelfbot() {
   }
 }
 
+<<<<<<< HEAD
 log("Starting Barro Multi-Account Selfbot...", "info");
 initializeSelfbot().then((config) => {
   setupTerminalInterface(clients, config);
+=======
+log("Starting Barro Selfbot...", "info");
+initializeSelfbot().then((config) => {
+  setupTerminalInterface(client, config);
+>>>>>>> origin/main
 }).catch((error) => {
   console.error(chalk.red("\n[FATAL ERROR] " + error.message));
   process.exit(1);

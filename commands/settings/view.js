@@ -1,15 +1,23 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+<<<<<<< HEAD
 import { log, style, formatAnsiBlock } from "../../utils/functions.js";
 import { THEME } from "../../utils/theme.js";
+=======
+import { log } from "../../utils/functions.js";
+>>>>>>> origin/main
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default {
   name: "view",
+<<<<<<< HEAD
   description: "View a saved backup",
+=======
+  description: "View a previously created backup",
+>>>>>>> origin/main
   aliases: ["viewbackup", "showbackup"],
   usage: "view <backup_name> | view list",
   category: "settings",
@@ -21,12 +29,19 @@ export default {
   async execute(client, message, args) {
     if (!args.length) {
       return message.channel.send(
+<<<<<<< HEAD
         formatAnsiBlock([
           style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | View`, THEME.ACCENT_COLOR),
           style(`❌ Please specify a backup to view!`, THEME.LABEL_COLOR),
           style(`Usage: `, THEME.LABEL_COLOR) + style(`\`${client.prefix}view <backup_name>\` - View specific backup`, THEME.ACCENT_COLOR),
           style(`Usage: `, THEME.LABEL_COLOR) + style(`\`${client.prefix}view list\` - List all backups`, THEME.ACCENT_COLOR)
         ])
+=======
+        "> ❌ **Please specify a backup to view!**\n" +
+          `> **Usage:**\n` +
+          `> • \`${client.prefix}view <backup_name>\` - View specific backup\n` +
+          `> • \`${client.prefix}view list\` - List all backups`
+>>>>>>> origin/main
       );
     }
 
@@ -35,10 +50,14 @@ export default {
     // Ensure backup directory exists
     if (!fs.existsSync(backupDir)) {
       return message.channel.send(
+<<<<<<< HEAD
         formatAnsiBlock([
           style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | View`, THEME.ACCENT_COLOR),
           style(`❌ No backups found! Create one using the backup command.`, THEME.LABEL_COLOR)
         ])
+=======
+        "> ❌ **No backups found!** Create one using the backup command."
+>>>>>>> origin/main
       );
     }
 
@@ -62,12 +81,16 @@ export default {
           viewTask.currentPage++;
           return this.showBackupPage(client, message, viewTask);
         } else {
+<<<<<<< HEAD
           return message.channel.send(
             formatAnsiBlock([
               style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | View`, THEME.ACCENT_COLOR),
               style(`❌ You're already on the last page.`, THEME.LABEL_COLOR)
             ])
           );
+=======
+          return message.channel.send("> ❌ You're already on the last page.");
+>>>>>>> origin/main
         }
       }
 
@@ -77,12 +100,16 @@ export default {
           viewTask.currentPage--;
           return this.showBackupPage(client, message, viewTask);
         } else {
+<<<<<<< HEAD
           return message.channel.send(
             formatAnsiBlock([
               style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | View`, THEME.ACCENT_COLOR),
               style(`❌ You're already on the first page.`, THEME.LABEL_COLOR)
             ])
           );
+=======
+          return message.channel.send("> ❌ You're already on the first page.");
+>>>>>>> origin/main
         }
       }
 
@@ -123,6 +150,7 @@ export default {
         .filter((file) => file.endsWith(".json"));
 
       if (backupFiles.length === 0) {
+<<<<<<< HEAD
         return message.channel.send(
           formatAnsiBlock([
             style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | View`, THEME.ACCENT_COLOR),
@@ -135,6 +163,12 @@ export default {
         style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | Available Backups (${backupFiles.length})`, THEME.ACCENT_COLOR),
         ''
       ];
+=======
+        return message.channel.send("> 📝 **No backups found!**");
+      }
+
+      let listText = `> 📋 **Available Backups (${backupFiles.length}):**\n\n`;
+>>>>>>> origin/main
 
       for (const file of backupFiles) {
         const backupName = file.replace(".json", "");
@@ -149,6 +183,7 @@ export default {
           const friendCount = backupData.statistics?.total_friends || 0;
           const serverCount = backupData.statistics?.total_servers || 0;
 
+<<<<<<< HEAD
           listLines.push(style(`${backupName}`, THEME.ACCENT_COLOR));
           listLines.push(style(`• Created: ${createdDate}`, THEME.LABEL_COLOR));
           listLines.push(style(`• Size: ${fileSizeKB}KB`, THEME.LABEL_COLOR));
@@ -174,6 +209,25 @@ export default {
           style(`❌ Error listing backups!`, THEME.LABEL_COLOR)
         ])
       );
+=======
+          listText += `> **${backupName}**\n`;
+          listText += `> • Created: ${createdDate}\n`;
+          listText += `> • Size: ${fileSizeKB}KB\n`;
+          listText += `> • Friends: ${friendCount} | Servers: ${serverCount}\n\n`;
+        } catch (error) {
+          listText += `> **${backupName}** (corrupted)\n`;
+          listText += `> • Created: ${createdDate}\n`;
+          listText += `> • Size: ${fileSizeKB}KB\n\n`;
+        }
+      }
+
+      listText += `> Use \`${client.prefix}view <backup_name>\` to view a specific backup.`;
+
+      return message.channel.send(listText);
+    } catch (error) {
+      log(`Error listing backups: ${error.message}`, "error");
+      return message.channel.send("> ❌ **Error listing backups!**");
+>>>>>>> origin/main
     }
   },
 
@@ -183,11 +237,16 @@ export default {
 
       if (!fs.existsSync(backupPath)) {
         return message.channel.send(
+<<<<<<< HEAD
           formatAnsiBlock([
             style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | View`, THEME.ACCENT_COLOR),
             style(`❌ Backup "${backupName}" not found!`, THEME.LABEL_COLOR),
             style(`Use \`${client.prefix}view list\` to see available backups.`, THEME.LABEL_COLOR)
           ])
+=======
+          `> ❌ **Backup "${backupName}" not found!**\n` +
+            `> Use \`${client.prefix}view list\` to see available backups.`
+>>>>>>> origin/main
         );
       }
 
@@ -216,11 +275,16 @@ export default {
     } catch (error) {
       log(`Error viewing backup: ${error.message}`, "error");
       return message.channel.send(
+<<<<<<< HEAD
         formatAnsiBlock([
           style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | View`, THEME.ACCENT_COLOR),
           style(`❌ Error viewing backup "${backupName}"!`, THEME.LABEL_COLOR),
           style(`The backup file might be corrupted or invalid.`, THEME.LABEL_COLOR)
         ])
+=======
+        `> ❌ **Error viewing backup "${backupName}"!**\n` +
+          `> The backup file might be corrupted or invalid.`
+>>>>>>> origin/main
       );
     }
   },
@@ -230,6 +294,7 @@ export default {
     const metadata = backupData.metadata || {};
     const stats = backupData.statistics || {};
 
+<<<<<<< HEAD
     let backupLines = [];
     let navigationLines = [];
 
@@ -262,6 +327,37 @@ export default {
       navigationLines.push(style(`📄 Navigation:`, THEME.HEADER_BOLD_COLOR));
       navigationLines.push(style(`• Type \`${client.prefix}view friends ${backupName}\` to view friends list`, THEME.LABEL_COLOR));
       navigationLines.push(style(`• Type \`${client.prefix}view servers ${backupName}\` to view servers list`, THEME.LABEL_COLOR));
+=======
+    let backupText = "";
+    let navigationText = "";
+
+    // Overview section
+    if (section === "overview") {
+      backupText = `> 📋 **Backup: ${backupName}**\n\n`;
+
+      // Metadata section
+      backupText += `> **🔍 Metadata:**\n`;
+      backupText += `> • Created: ${new Date(
+        metadata.created_at
+      ).toLocaleString()}\n`;
+      backupText += `> • Selfbot User: ${
+        metadata.selfbot_user?.tag || "Unknown"
+      }\n`;
+      backupText += `> • Selfbot ID: ${
+        metadata.selfbot_user?.id || "Unknown"
+      }\n\n`;
+
+      // Statistics section
+      backupText += `> **📊 Statistics:**\n`;
+      backupText += `> • Total Friends: ${stats.total_friends || 0}\n`;
+      backupText += `> • Total Servers: ${stats.total_servers || 0}\n`;
+      backupText += `> • Total Channels: ${stats.total_channels || 0}\n\n`;
+
+      // Navigation options
+      navigationText = `> **📄 Navigation:**\n`;
+      navigationText += `> • Type \`${client.prefix}view friends ${backupName}\` to view friends list\n`;
+      navigationText += `> • Type \`${client.prefix}view servers ${backupName}\` to view servers list\n`;
+>>>>>>> origin/main
     }
 
     // Friends section
@@ -271,6 +367,7 @@ export default {
       const startIdx = (currentPage - 1) * pageSize;
       const endIdx = Math.min(startIdx + pageSize, totalFriends);
 
+<<<<<<< HEAD
       backupLines.push(style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Friends (${totalFriends}) - Page ${currentPage}/${
         totalPages || 1
       }`, THEME.ACCENT_COLOR));
@@ -279,10 +376,19 @@ export default {
       if (totalFriends === 0) {
         backupLines.push(style(`No friends found in this backup.`, THEME.LABEL_COLOR));
         backupLines.push('');
+=======
+      backupText = `> 👥 **Friends (${totalFriends})** - Page ${currentPage}/${
+        totalPages || 1
+      }\n\n`;
+
+      if (totalFriends === 0) {
+        backupText += `> No friends found in this backup.\n\n`;
+>>>>>>> origin/main
       } else {
         const friendsToShow = backupData.friends.slice(startIdx, endIdx);
 
         for (const friend of friendsToShow) {
+<<<<<<< HEAD
           backupLines.push(style(`• ${friend.tag} (${friend.id})`, THEME.LABEL_COLOR));
         }
         backupLines.push("");
@@ -298,6 +404,23 @@ export default {
       }
       navigationLines.push(style(`• Type \`${client.prefix}view overview ${backupName}\` to return to overview`, THEME.LABEL_COLOR));
       navigationLines.push(style(`• Type \`${client.prefix}view servers ${backupName}\` to view servers list`, THEME.LABEL_COLOR));
+=======
+          backupText += `> • ${friend.tag} (${friend.id})\n`;
+        }
+        backupText += "\n";
+      }
+
+      // Navigation options
+      navigationText = `> **📄 Navigation:**\n`;
+      if (currentPage > 1) {
+        navigationText += `> • Type \`${client.prefix}view prev\` for previous page\n`;
+      }
+      if (currentPage < totalPages) {
+        navigationText += `> • Type \`${client.prefix}view next\` for next page\n`;
+      }
+      navigationText += `> • Type \`${client.prefix}view overview ${backupName}\` to return to overview\n`;
+      navigationText += `> • Type \`${client.prefix}view servers ${backupName}\` to view servers list\n`;
+>>>>>>> origin/main
     }
 
     // Servers section
@@ -307,6 +430,7 @@ export default {
       const startIdx = (currentPage - 1) * pageSize;
       const endIdx = Math.min(startIdx + pageSize, totalServers);
 
+<<<<<<< HEAD
       backupLines.push(style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Servers (${totalServers}) - Page ${currentPage}/${
         totalPages || 1
       }`, THEME.ACCENT_COLOR));
@@ -315,12 +439,21 @@ export default {
       if (totalServers === 0) {
         backupLines.push(style(`No servers found in this backup.`, THEME.LABEL_COLOR));
         backupLines.push('');
+=======
+      backupText = `> 🏠 **Servers (${totalServers})** - Page ${currentPage}/${
+        totalPages || 1
+      }\n\n`;
+
+      if (totalServers === 0) {
+        backupText += `> No servers found in this backup.\n\n`;
+>>>>>>> origin/main
       } else {
         const serversToShow = backupData.servers.slice(startIdx, endIdx);
 
         for (const server of serversToShow) {
           const memberCount = server.member_count || "Unknown";
           const channelCount = server.channel_count || 0;
+<<<<<<< HEAD
           backupLines.push(style(`• ${server.name} (${server.id})`, THEME.ACCENT_COLOR));
           backupLines.push(style(`  Members: ${memberCount} | Channels: ${channelCount}`, THEME.LABEL_COLOR));
         }
@@ -341,6 +474,28 @@ export default {
 
     // Combine text and send
     const fullText = formatAnsiBlock([...backupLines, ...navigationLines]);
+=======
+          backupText += `> • ${server.name} (${server.id})\n`;
+          backupText += `>   Members: ${memberCount} | Channels: ${channelCount}\n`;
+        }
+        backupText += "\n";
+      }
+
+      // Navigation options
+      navigationText = `> **📄 Navigation:**\n`;
+      if (currentPage > 1) {
+        navigationText += `> • Type \`${client.prefix}view prev\` for previous page\n`;
+      }
+      if (currentPage < totalPages) {
+        navigationText += `> • Type \`${client.prefix}view next\` for next page\n`;
+      }
+      navigationText += `> • Type \`${client.prefix}view overview ${backupName}\` to return to overview\n`;
+      navigationText += `> • Type \`${client.prefix}view friends ${backupName}\` to view friends list\n`;
+    }
+
+    // Combine text and send
+    const fullText = backupText + navigationText;
+>>>>>>> origin/main
 
     // Send or edit message
     if (viewTask.message) {

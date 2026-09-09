@@ -27,9 +27,15 @@ export default {
                     isGuildAvatar = true;
                 } else {
                     return message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/general/avatar.js
                       style(' Avatar ', THEME.HEADER_BOLD_COLOR, true),
                       '',
                       style(' Error: ', THEME.LABEL_COLOR) + ' ' + style('This command can only fetch server avatars in a guild channel.', THEME.ACCENT_COLOR)
+=======
+                      style(' Avatar ', '0;30'),
+                      '',
+                      style(' Error: ', '0;97') + ' ' + style('This command can only fetch server avatars in a guild channel.', '0;34')
+>>>>>>> origin/main:commands/utility/avatar.js
                     ]));
                 }
             } else if (arg === 'bot' || arg === 'self') {
@@ -51,18 +57,32 @@ export default {
                             avatarName = `${target.username}'s`;
                         } else {
                             return message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/general/avatar.js
                               style(' Avatar ', THEME.HEADER_BOLD_COLOR, true),
                               '',
                               style(' Error: ', THEME.LABEL_COLOR) + ' ' + style('Could not find a user with that ID.', THEME.ACCENT_COLOR),
                               style(' Usage: ', THEME.LABEL_COLOR) + ' ' + style(`${client.prefix}avatar [user mention/id | server | bot]`, THEME.ACCENT_COLOR)
+=======
+                              style(' Avatar ', '4;30'),
+                              '',
+                              style(' Error: ', '0;97') + ' ' + style('Could not find a user with that ID.', '0;34'),
+                              style(' Usage: ', '0;97') + ' ' + style(`${client.prefix}avatar [user mention/id | server | bot]`, '0;34')
+>>>>>>> origin/main:commands/utility/avatar.js
                             ]));
                         }
                     } catch (error) {
                         return message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/general/avatar.js
                           style(' Avatar ', THEME.HEADER_BOLD_COLOR, true),
                           '',
                           style(' Error: ', THEME.LABEL_COLOR) + ' ' + style('Invalid argument or user not found.', THEME.ACCENT_COLOR),
                           style(' Usage: ', THEME.LABEL_COLOR) + ' ' + style(`${client.prefix}avatar [user mention/id | server | bot]`, THEME.ACCENT_COLOR)
+=======
+                          style(' Avatar ', '4;30'),
+                          '',
+                          style(' Error: ', '0;97') + ' ' + style('Invalid argument or user not found.', '0;34'),
+                          style(' Usage: ', '0;97') + ' ' + style(`${client.prefix}avatar [user mention/id | server | bot]`, '0;34')
+>>>>>>> origin/main:commands/utility/avatar.js
                         ]));
                     }
                 }
@@ -75,9 +95,15 @@ export default {
 
         if (!avatarURL) {
             return message.channel.send(formatAnsiBlock([
+<<<<<<< HEAD:commands/general/avatar.js
               style(' Avatar ', THEME.HEADER_BOLD_COLOR, true),
               '',
               style(' Info: ', THEME.LABEL_COLOR) + ' ' + style(`${avatarName} doesn't have an avatar.`, THEME.ACCENT_COLOR)
+=======
+              style(' Avatar ', '4;30'),
+              '',
+              style(' Info: ', '0;97') + ' ' + style(`${avatarName} doesn't have an avatar.`, '0;34')
+>>>>>>> origin/main:commands/utility/avatar.js
             ]));
         }
 
