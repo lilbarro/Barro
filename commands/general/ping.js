@@ -1,9 +1,10 @@
 import chalk from 'chalk';
 import { log, formatTime } from '../../utils/functions.js';
+import { THEME } from '../../utils/theme.js';
 
 export default {
     name: 'ping',
-    description: 'Check the bot\'s latency and API response time',
+    description: 'Check bot/API response',
     aliases: ['latency', 'pong'],
     usage: '[command name]',
     category: 'general', 
@@ -18,6 +19,9 @@ export default {
      * @param {Array} args - Command arguments
      */
     execute: async (client, message, args) => {
+        if (args[0] && ['help', '--help', '-h'].includes(args[0].toLowerCase())) {
+            return message.channel.send(`> **Ping Help**\n> Usage: \`${client.prefix}ping\`\n> Aliases: ${client.prefix}latency, ${client.prefix}pong`);
+        }
         try {
             // Send initial message
             const initialMessage = await message.channel.send('> 🔄 **Pinging...**');
@@ -40,12 +44,12 @@ export default {
             
             // Create a formatted response with quote blocks
             const response = [
-                `> 🏓 ${style('Pong!', '1;30')}`,
+                `> 🏓 ${style('Pong!', THEME.HEADER_BOLD_COLOR, true)}`,
                 '> ',
-                `> ${getLatencyEmoji(latency)} ${style('Message Latency:', '1;31')} ${latency}ms`,
-                `> ${getLatencyEmoji(apiLatency)} ${style('API Latency:', '1;31')} ${apiLatency}ms`,
+                `> ${getLatencyEmoji(latency)} ${style('Message Latency:', THEME.LABEL_COLOR)} ${style(latency + 'ms', THEME.ACCENT_COLOR)}`,
+                `> ${getLatencyEmoji(apiLatency)} ${style('API Latency:', THEME.LABEL_COLOR)} ${style(apiLatency + 'ms', THEME.ACCENT_COLOR)}`,
                 '> ',
-                `> ⏱️ ${style('Uptime:', '1;31')} ${uptime}`
+                `> ⏱️ ${style('Uptime:', THEME.LABEL_COLOR)} ${style(uptime, THEME.ACCENT_COLOR)}`
             ];
             
             // Edit the initial message with the results

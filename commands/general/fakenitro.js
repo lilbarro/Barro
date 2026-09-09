@@ -1,8 +1,9 @@
 import { log } from "../../utils/functions.js";
+import { THEME } from "../../utils/theme.js";
 
 export default {
   name: "fakenitro",
-  description: "Generate fake Nitro gift links",
+  description: "Generate simulated Nitro links",
   aliases: ["nitro", "freegift"],
   usage: "[amount]",
   category: "general",
@@ -11,6 +12,9 @@ export default {
   cooldown: 30,
 
   execute: async (client, message, args) => {
+    if (args[0] && ['help', '--help', '-h'].includes(args[0].toLowerCase())) {
+      return message.channel.send(`> **FakeNitro Help**\n> Usage: \`${client.prefix}fakenitro [amount]\` (1-10 links)\n> Aliases: ${client.prefix}nitro, ${client.prefix}freegift`);
+    }
     try {
       if (message.author.id !== client.user.id) return;
 
@@ -32,12 +36,12 @@ export default {
 
       // Send the links
       const giftLines = [
-        style('[ FAKENITRO ]', '1;30'),
+        style('[ FAKENITRO ]', THEME.HEADER_BOLD_COLOR),
         '',
-        style('GIFTS GENERATED:', '1;31') + ' ' + style(links.length.toString(), '0;97')
+        style('GIFTS GENERATED:', THEME.LABEL_COLOR) + ' ' + style(links.length.toString(), THEME.ACCENT_COLOR)
       ];
       links.forEach((link, index) => {
-        giftLines.push(style(`${index + 1}.`, '1;31') + ' ' + style(link, '0;97'));
+        giftLines.push(style(`${index + 1}.`, THEME.LABEL_COLOR) + ' ' + style(link, THEME.ACCENT_COLOR));
       });
       await message.channel.send(formatAnsiBlock(giftLines));
 
@@ -45,9 +49,9 @@ export default {
     } catch (error) {
       log(`Error in fakenitro command: ${error.message}`, "error");
       message.channel.send(formatAnsiBlock([
-        style('[ FAKENITRO ]', '1;30'),
+        style('[ FAKENITRO ]', THEME.HEADER_BOLD_COLOR),
         '',
-        style('ERROR:', '1;31') + ' ' + style(`An error occurred: ${error.message}`, '0;97')
+        style('ERROR:', THEME.LABEL_COLOR) + ' ' + style(`An error occurred: ${error.message}`, THEME.ACCENT_COLOR)
       ]));
     }
   },

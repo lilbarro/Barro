@@ -1,12 +1,17 @@
+import { THEME } from "../../utils/theme.js";
+
 export default {
     name: 'banner',
-    description: "Displays a user's or server's banner.",
+    description: "Display user/server banner",
     aliases: ['b'],
     usage: '[user mention/id | server]',
     category: 'general',
     type: 'both',
     permissions: ['SendMessages'],    cooldown: 3,
     async execute(client, message, args) {
+        if (args[0] && ['help', '--help', '-h'].includes(args[0].toLowerCase())) {
+            return message.channel.send(`> **Banner Help**\n> Usage: \`${client.prefix}banner [user mention/id | server]\`\n> Aliases: ${client.prefix}b`);
+        }
         let targetUser = null;
         let targetGuild = null;
         let bannerName = "";
@@ -19,9 +24,9 @@ export default {
                     bannerName = `${message.guild.name}'s`;
                 } else {
                     return message.channel.send(formatAnsiBlock([
-                      style('[ BANNER ]', '1;30'),
+                      style('[ BANNER ]', THEME.HEADER_BOLD_COLOR),
                       '',
-                      style('ERROR:', '1;31') + ' ' + style('This command can only fetch server banners in a guild channel.', '0;97')
+                      style('ERROR:', THEME.LABEL_COLOR) + ' ' + style('This command can only fetch server banners in a guild channel.', THEME.ACCENT_COLOR)
                     ]));
                 }
             } else {
@@ -71,14 +76,14 @@ export default {
 
         if (!bannerURL) {
             const lines = [
-              style('[ BANNER ]', '1;30'),
+              style('[ BANNER ]', THEME.HEADER_BOLD_COLOR),
               '',
-              style('INFO:', '1;31') + ' ' + style(`${bannerName} doesn't have a banner.`, '0;97')
+              style('INFO:', THEME.LABEL_COLOR) + ' ' + style(`${bannerName} doesn't have a banner.`, THEME.ACCENT_COLOR)
             ];
             if (targetUser) {
-              lines.push(style('NOTE:', '1;31') + ' ' + style('Users need Discord Nitro to set a banner.', '0;97'));
+              lines.push(style('NOTE:', THEME.LABEL_COLOR) + ' ' + style('Users need Discord Nitro to set a banner.', THEME.ACCENT_COLOR));
             } else if (targetGuild) {
-              lines.push(style('NOTE:', '1;31') + ' ' + style('Servers need a certain boost level to set a banner.', '0;97'));
+              lines.push(style('NOTE:', THEME.LABEL_COLOR) + ' ' + style('Servers need a certain boost level to set a banner.', THEME.ACCENT_COLOR));
             }
             return message.channel.send(formatAnsiBlock(lines));
         }

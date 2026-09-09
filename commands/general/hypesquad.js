@@ -1,5 +1,6 @@
 import { log, loadConfig } from "../../utils/functions.js";
 import axios from "axios";
+import { THEME } from "../../utils/theme.js";
 
 export default {
   name: "hypesquad",
@@ -18,9 +19,9 @@ export default {
       // Check if a house was specified
       if (!args[0]) {
         return message.channel.send(formatAnsiBlock([
-          style('[ HYPESQUAD ]', '1;30'),
+          style('[ HYPESQUAD ]', THEME.HEADER_BOLD_COLOR),
           '',
-          style('USAGE:', '1;31') + ' ' + style(`${client.prefix}hypesquad <bravery|brilliance|balance|leave>`, '0;97')
+          style('USAGE:', THEME.LABEL_COLOR) + ' ' + style(`${client.prefix}hypesquad <bravery|brilliance|balance|leave>`, THEME.ACCENT_COLOR)
         ]));
       }
 
@@ -52,17 +53,17 @@ export default {
           break;
         default:
           return message.channel.send(formatAnsiBlock([
-            style('[ HYPESQUAD ]', '1;30'),
+            style('[ HYPESQUAD ]', THEME.HEADER_BOLD_COLOR),
             '',
-            style('ERROR:', '1;31') + ' ' + style('Invalid house. Please choose bravery, brilliance, balance, or leave.', '0;97')
+            style('ERROR:', THEME.LABEL_COLOR) + ' ' + style('Invalid house. Please choose bravery, brilliance, balance, or leave.', THEME.ACCENT_COLOR)
           ]));
       }
 
       // Send initial message
       const statusMsg = await message.channel.send(formatAnsiBlock([
-        style('[ HYPESQUAD ]', '1;30'),
+        style('[ HYPESQUAD ]', THEME.HEADER_BOLD_COLOR),
         '',
-        style('STATUS:', '1;31') + ' ' + style(houseId === null ? 'Leaving HypeSquad...' : `Changing to ${houseName}...`, '0;97')
+        style('STATUS:', THEME.LABEL_COLOR) + ' ' + style(houseId === null ? 'Leaving HypeSquad...' : `Changing to ${houseName}...`, THEME.ACCENT_COLOR)
       ]));
 
       try {
@@ -78,9 +79,9 @@ export default {
           });
 
           await statusMsg.edit(formatAnsiBlock([
-            style('[ HYPESQUAD ]', '1;30'),
+            style('[ HYPESQUAD ]', THEME.HEADER_BOLD_COLOR),
             '',
-            style('SUCCESS:', '1;31') + ' ' + style('Successfully left HypeSquad.', '0;97')
+            style('SUCCESS:', THEME.LABEL_COLOR) + ' ' + style('Successfully left HypeSquad.', THEME.ACCENT_COLOR)
           ]));
           log("Left HypeSquad", "debug");
         } else {
@@ -98,26 +99,26 @@ export default {
           });
 
           await statusMsg.edit(formatAnsiBlock([
-            style('[ HYPESQUAD ]', '1;30'),
+            style('[ HYPESQUAD ]', THEME.HEADER_BOLD_COLOR),
             '',
-            style('SUCCESS:', '1;31') + ' ' + style(`Successfully joined HypeSquad ${houseName}.`, '0;97')
+            style('SUCCESS:', THEME.LABEL_COLOR) + ' ' + style(`Successfully joined HypeSquad ${houseName}.`, THEME.ACCENT_COLOR)
           ]));
           log(`Changed HypeSquad house to ${houseName}`, "debug");
         }
       } catch (error) {
         await statusMsg.edit(formatAnsiBlock([
-          style('[ HYPESQUAD ]', '1;30'),
+          style('[ HYPESQUAD ]', THEME.HEADER_BOLD_COLOR),
           '',
-          style('ERROR:', '1;31') + ' ' + style(`Failed to change HypeSquad house: ${error.message}`, '0;97')
+          style('ERROR:', THEME.LABEL_COLOR) + ' ' + style(`Failed to change HypeSquad house: ${error.message}`, THEME.ACCENT_COLOR)
         ]));
         log(`Error changing HypeSquad house: ${error.message}`, 'error');
       }
     } catch (error) {
       log(`Error in hypesquad command: ${error.message}`, 'error');
       message.channel.send(formatAnsiBlock([
-        style('[ HYPESQUAD ]', '1;30'),
+        style('[ HYPESQUAD ]', THEME.HEADER_BOLD_COLOR),
         '',
-        style('ERROR:', '1;31') + ' ' + style(`An error occurred: ${error.message}`, '0;97')
+        style('ERROR:', THEME.LABEL_COLOR) + ' ' + style(`An error occurred: ${error.message}`, THEME.ACCENT_COLOR)
       ]));
     }
   },
