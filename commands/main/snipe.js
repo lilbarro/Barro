@@ -1,112 +1,169 @@
 import { log } from "../../utils/functions.js";
+import { formatHeaderTitle } from "../../utils/functions.js";
+import { THEME } from "../../utils/theme.js";
 
 export default {
-  name: "snipe",
-  description: "Get the last deleted message in a channel",
-  aliases: ["s", "deletesnipe"],
-  usage: "",
-  category: "main",
-  type: "both",
-  permissions: [],
-  cooldown: 10,
+  name: 'snipe',
+  description: 'Show recently deleted messages',
+  aliases: ['lastdeleted', 'undeletemsg', 's'],
+  usage: '[number]',
+  category: 'main',
+  type: 'both',
+  permissions: ['SendMessages'],
+  cooldown: 5,
 
-  execute: async (client, message, args) => {
+  async execute(client, message, args) {
     try {
-      if (message.author.id !== client.user.id) return;
-
-      let targetChannel = message.channel;
-
-      // If a channel ID is provided
-      if (args[0] && !isNaN(args[0])) {
-        const channel = client.channels.cache.get(args[0]);
-        if (channel) {
-          targetChannel = channel;
-        }
+      if (args[0] && ['help', '--help', '-h'].includes(args[0].toLowerCase())) {
+        return message.channel.send(`> **Snipe Help**\n> Usage: \`${client.prefix}snipe [number]\`\n> Aliases: ${client.prefix}lastdeleted, ${client.prefix}undeletemsg, ${client.prefix}s`);
       }
-
-      const deletedMessages = client._deletedMessages || new Map();
-
-      if (!deletedMessages.has(targetChannel.id)) {
+      if (!client._deletedMessages) {
         return message.channel.send(formatAnsiBlock([
-          style('[ SNIPE ]', '1;30'),
+          formatHeaderTitle('Barro Snipe'),
           '',
-          style('ERROR:', '1;31') + ' ' + style('No recently deleted messages found here!', '0;97')
+          ...formatThreeBlockRows([['Status', 'Error']], [['Result', 'No deleted messages cache found.']])
         ]));
       }
 
-      const deletedMessage = deletedMessages.get(targetChannel.id);
-      const timestamp = new Date(deletedMessage.timestamp).toLocaleString();
+      const channelId = message.channel.id;
+      const deletedMessages = client._deletedMessages.get(channelId);
 
-      const lines = [
-        style('[ SNIPE ]', '1;30'),
-        '',
-        style('DELETED MESSAGE:', '1;31'),
-        '  Author: ' + (deletedMessage.author.tag || 'Unknown'),
-        '  Channel: ' + (deletedMessage.channelName || 'DM/GC'),
-        '  Deleted at: ' + timestamp
+      if (!deletedMessages || deletedMessages.length === 0) {
+        return message.channel.send(formatAnsiBlock([
+          formatHeaderTitle('Barro Snipe'),
+          '',
+          ...formatThreeBlockRows([['Status', 'Not Found']], [['Result', 'No recently deleted messages in this channel.']])
+        ]));
+      }
+
+      // Filter out only the bot's own messages
+      const filteredMessages = deletedMessages.filter(msg => msg.author.id !== client.user.id);
+
+      if (filteredMessages.length === 0) {
+        return message.channel.send(formatAnsiBlock([
+          formatHeaderTitle('Barro Snipe'),
+          '',
+          ...formatThreeBlockRows([['Status', 'Not Found']], [['Result', 'No deleted messages from non-owners in this channel.']])
+        ]));
+      }
+
+      // Parse the optional number argument
+      let messageIndex = 0; // Default to most recent (index 0)
+      if (args.length > 0) {
+        const num = parseInt(args[0], 10);
+        if (!isNaN(num) && num >= 1) {
+          messageIndex = num - 1; // Convert 1-based to 0-based
+        }
+      }
+
+      // Check if the requested index exists
+      if (messageIndex >= filteredMessages.length) {
+        return message.channel.send(formatAnsiBlock([
+          formatHeaderTitle('Barro Snipe'),
+          '',
+          ...formatThreeBlockRows([['Status', 'Not Found']], [['Result', `Only ${filteredMessages.length} deleted message(s) available. Use a number between 1 and ${filteredMessages.length}.`]])
+        ]));
+      }
+
+      const deletedMsg = filteredMessages[messageIndex];
+
+      const timeAgo = getTimeAgo(deletedMsg.timestamp);
+      const attachmentCount = deletedMsg.attachments?.size || 0;
+      const messageNumber = messageIndex + 1;
+      const totalMessages = filteredMessages.length;
+
+      const contentPreview = deletedMsg.content ?
+        deletedMsg.content :
+        'No text content';
+
+      const rows = [
+        ['Message', `${messageNumber}/${totalMessages}`],
+        ['Author', deletedMsg.author.tag],
+        ['Deleted', timeAgo],
+        ['Attachments', attachmentCount > 0 ? `${attachmentCount} file(s)` : 'None'],
+        ['Channel Type', deletedMsg.channelType || 'Unknown']
       ];
 
-      if (deletedMessage.content && deletedMessage.content.trim().length > 0) {
-        if (deletedMessage.content.length < 100) {
-          lines.push(style('Content:', '1;31') + ' ' + deletedMessage.content);
-        } else {
-          lines.push(style('Content:', '1;31'));
-          lines.push(...deletedMessage.content.split('\n'));
-        }
-      } else {
-        lines.push(style('Content:', '1;31') + ' *No text content*');
+      if (deletedMsg.guildName) {
+        rows.push(['Server', deletedMsg.guildName]);
+      }
+      if (deletedMsg.channelName) {
+        rows.push(['Channel', deletedMsg.channelName]);
       }
 
-      if (deletedMessage.attachments && deletedMessage.attachments.length > 0) {
-        lines.push(style('Attachments:', '1;31'));
-        deletedMessage.attachments.forEach((att, index) => {
-          lines.push(`  ${index + 1}. ${att.name}: ${att.url}`);
-        });
-      }
-
-      await message.channel.send(formatAnsiBlock(lines));
-
-      // Send images separately
-      if (deletedMessage.attachments && deletedMessage.attachments.length > 0) {
-        const imageAttachments = deletedMessage.attachments.filter(
-          (att) => att.contentType && att.contentType.startsWith("image/")
-        );
-
-        if (imageAttachments.length > 0) {
-          await message.channel.send(formatAnsiBlock([
-            style('[ SNIPE ]', '1;30'),
-            '',
-            style('IMAGES:', '1;31') + ' ' + style('Deleted Images:', '0;97')
-          ]));
-          const maxImages = Math.min(imageAttachments.length, 3);
-          for (let i = 0; i < maxImages; i++) {
-            await message.channel.send(imageAttachments[i].url);
-          }
-          if (imageAttachments.length > maxImages) {
-            await message.channel.send(formatAnsiBlock([
-              style('[ SNIPE ]', '1;30'),
-              '',
-              style('INFO:', '1;31') + ' ' + style(`${imageAttachments.length - maxImages} more image(s) not shown`, '0;97')
-            ]));
-          }
-        }
-      }
-
-    } catch (error) {
-      log(`Error in snipe command: ${error.message}`, "error");
-      message.channel.send(formatAnsiBlock([
-        style('[ SNIPE ]', '1;30'),
+      // Create the main details block
+      const detailsLines = [
+        formatHeaderTitle(`Barro Snipe - Deleted Message #${messageNumber}`),
         '',
-        style('ERROR:', '1;31') + ' ' + style(`Error: ${error.message}`, '0;97')
+        ...formatThreeBlockRows([], rows)
+      ];
+      const responseBlocks = [detailsLines];
+      if (contentPreview !== 'No text content') {
+        responseBlocks.push([
+          style('Message Content', THEME.HEADER_BOLD_COLOR),
+          style('─'.repeat(20), THEME.DIVIDER_COLOR),
+          style(contentPreview, THEME.ACCENT_COLOR)
+        ]);
+      }
+
+      return message.channel.send(formatAnsiBlocks(responseBlocks));
+    } catch (error) {
+      log(`Error in snipe command: ${error.message}`, 'error');
+      return message.channel.send(formatAnsiBlock([
+        formatHeaderTitle('Barro Snipe'),
+        '',
+        style('Status', THEME.LABEL_COLOR) + style(' | ', THEME.DIVIDER_COLOR) + style('Error', THEME.ACCENT_COLOR),
+        style('Result', THEME.LABEL_COLOR) + style(' | ', THEME.DIVIDER_COLOR) + style(`Failed to retrieve deleted message: ${error.message}`, THEME.ACCENT_COLOR)
       ]));
     }
-  },
+  }
 };
 
 function style(text, colorCode) {
-  return `\u001b[${colorCode}m${text}\u001b[0m`;
+  if (String(text).startsWith('Barro') && colorCode === THEME.HEADER_BOLD_COLOR) {
+    return `\u001b[${THEME.HEADER_COLOR}mBarro\u001b[0m` + `\u001b[${THEME.ACCENT_COLOR}m${String(text).slice(5)}\u001b[0m`;
+  }
+  return `[${colorCode}m${text}[0m`;
 }
 
 function formatAnsiBlock(lines) {
   return ['> ```ansi', ...lines.map(line => `> ${line}`), '> ```'].join('\n');
+}
+
+function formatAnsiBlocks(blocks) {
+  const [firstBlock, ...remainingBlocks] = blocks;
+  const output = ['> ```ansi', ...firstBlock.map(line => `> ${line}`)];
+  remainingBlocks.forEach(block => output.push('> ``````ansi', ...block.map(line => `> ${line}`)));
+  output.push('> ```');
+  return output.join('\n');
+}
+
+function formatThreeBlockRows(block2Rows, block3Rows) {
+  const clean = (value) => String(value).replace(/\[[0-9;]*m/g, '');
+  const width = [...block2Rows, ...block3Rows].reduce((max, [label]) => Math.max(max, clean(label).length), 0);
+  const renderRows = (rows) => rows.map(([label, value]) => {
+    const left = clean(label).padEnd(width, ' ');
+    return style(left, THEME.LABEL_COLOR) + style(' | ', THEME.DIVIDER_COLOR) + style(clean(value), THEME.ACCENT_COLOR);
+  });
+
+  const finalRows = [];
+  if (block2Rows.length) finalRows.push(...renderRows(block2Rows));
+  if (block3Rows.length) finalRows.push(...renderRows(block3Rows));
+  return finalRows;
+}
+
+function getTimeAgo(timestamp) {
+  const now = Date.now();
+  const diff = now - timestamp;
+
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (days > 0) return `${days} day(s) ago`;
+  if (hours > 0) return `${hours} hour(s) ago`;
+  if (minutes > 0) return `${minutes} minute(s) ago`;
+  if (seconds > 0) return `${seconds} second(s) ago`;
+  return 'Just now';
 }

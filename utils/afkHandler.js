@@ -1,4 +1,23 @@
 import { loadConfig, log } from "./functions.js";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const AFK_FILE = path.join(path.dirname(__filename), '..', 'data', 'afk.json');
+
+export function readAfkData() {
+  try {
+    if (!fs.existsSync(AFK_FILE)) return {};
+    return JSON.parse(fs.readFileSync(AFK_FILE, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+export function writeAfkData(data) {
+  fs.writeFileSync(AFK_FILE, JSON.stringify(data, null, 2));
+}
 
 // ============================================
 // STATE

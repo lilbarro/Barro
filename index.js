@@ -1,83 +1,63 @@
-import { Client } from "discord.js-selfbot-v13";
+import pkg from "discord.js-selfbot-v13";
+const { Client } = pkg;
 import chalk from "chalk";
 import figlet from "figlet";
 import gradient from "gradient-string";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { resolve } from "path";
+import readline from "readline";
 
 import { loadEvents } from "./handlers/EventsHandler.js";
 import { loadCommands } from "./handlers/CommandHandler.js";
 import { setupAntiCrash } from "./handlers/anticrash.js";
 import { setupRateLimit } from "./handlers/RateLimitHandler.js";
-import { loadConfig, clearConsole, log, wait } from "./utils/functions.js";
+import { loadConfig, clearConsole, log, wait, style, loadJSONAsync, saveJSONAsync } from "./utils/functions.js";
+import { getUserPrefix } from "./utils/userPrefixManager.js";
 import TaskManager from "./utils/TaskManager.js";
 import { initNitroSniper } from "./commands/general/nitrosniper.js";
 
 let isShuttingDown = false;
-let client = null;
+let clients = [];
+let isLoggedIn = false; // True if at least one client is connected
+let logoutCooldownTimer = 0;
+let logoutCooldownActive = false;
+
+// ============================================
+// STYLING & FORMATTING HELPERS
+// ============================================
+
+function displaySimpleMenu() {
+  console.log('\n' + style('Available Commands:', '0;36'));
+  console.log(style('login', '1;37') + '    | Start all bots');
+  console.log(style('logout', '1;37') + '   | Turn off all bots');
+  console.log(style('restart', '1;37') + '  | Restart all bots');
+  console.log(style('status', '1;37') + '   | Check the status of bots');
+  console.log(style('exit', '1;37') + '     | Exit the terminal\n');
+}
 
 // ============================================
 // TRACKING HELPER FUNCTIONS
 // ============================================
 
-function loadJSON(path) {
-  try {
-    if (!existsSync(path)) return {};
-    return JSON.parse(readFileSync(path, 'utf-8'));
-  } catch {
-    return {};
-  }
-}
-
-function saveJSON(path, data) {
-  try {
-    writeFileSync(path, JSON.stringify(data, null, 2));
-  } catch (err) {
-    log(`Error saving JSON to ${path}: ${err.message}`, 'warn');
-  }
-}
-
-function setupTracking(client) {
+async function setupTracking(client) {
   const PFP_PATH = resolve('./data/pfphistory.json');
   const NAME_PATH = resolve('./data/namehistory.json');
   const BANNER_PATH = resolve('./data/bannerhistory.json');
 
-  // Friends allowlist: only track profile changes for users we are actually
-  // friends with (and any explicit special_users from config). Tracking
-  // randoms from shared guilds is what makes a selfbot look like a stalker
-  // account and is one of the patterns Discord's automated systems flag.
-  const isTrackedUser = (userId) => {
-    try {
-      const rel = client.relationships?.cache?.get(userId);
-      if (rel && rel.type === 'FRIEND') return true;
-    } catch {}
-    try {
-      const special = client.config?.relationship_logs?.special_users;
-      if (Array.isArray(special) && special.includes(userId)) return true;
-    } catch {}
-    return false;
-  };
-
   client.on('userUpdate', async (oldUser, newUser) => {
     try {
-      // Only act on friend/profile changes. Skip randoms, mutual guild
-      // members, blocked users, etc.
-      if (!isTrackedUser(newUser.id)) {
-        return;
-      }
-
-      // Fetch full profile to get banner
+      let fullOldUser = oldUser;
       let fullNewUser = newUser;
 
       try {
         fullNewUser = await client.users.fetch(newUser.id, { force: true });
       } catch {
-        // Keep original if fetch fails
+        // Keep original
       }
 
       // ---- TRACK PFP CHANGE ----
       if (oldUser.avatar !== newUser.avatar) {
-        const pfpData = loadJSON(PFP_PATH);
+        const pfpData = await loadJSONAsync(PFP_PATH);
         if (!pfpData[newUser.id]) pfpData[newUser.id] = [];
 
         pfpData[newUser.id].push({
@@ -85,18 +65,17 @@ function setupTracking(client) {
           changedAt: new Date().toISOString(),
         });
 
-        // Keep last 20 only
         if (pfpData[newUser.id].length > 20) {
           pfpData[newUser.id] = pfpData[newUser.id].slice(-20);
         }
 
-        saveJSON(PFP_PATH, pfpData);
-        log(`Tracked PFP change for ${newUser.username}`, 'debug');
+        await saveJSONAsync(PFP_PATH, pfpData);
+        log(`Tracked PFP change for ${newUser.username}`, 'debug', client.user?.username || 'Unknown');
       }
 
       // ---- TRACK USERNAME CHANGE ----
       if (oldUser.username !== newUser.username) {
-        const nameData = loadJSON(NAME_PATH);
+        const nameData = await loadJSONAsync(NAME_PATH);
         if (!nameData[newUser.id]) nameData[newUser.id] = [];
 
         nameData[newUser.id].push({
@@ -104,18 +83,17 @@ function setupTracking(client) {
           changedAt: new Date().toISOString(),
         });
 
-        // Keep last 20 only
         if (nameData[newUser.id].length > 20) {
           nameData[newUser.id] = nameData[newUser.id].slice(-20);
         }
 
-        saveJSON(NAME_PATH, nameData);
-        log(`Tracked username change for ${newUser.username} (was ${oldUser.username})`, 'debug');
+        await saveJSONAsync(NAME_PATH, nameData);
+        log(`Tracked username change for ${newUser.username} (was ${oldUser.username})`, 'debug', client.user?.username || 'Unknown');
       }
 
       // ---- TRACK BANNER CHANGE ----
       if (oldUser.banner !== newUser.banner) {
-        const bannerData = loadJSON(BANNER_PATH);
+        const bannerData = await loadJSONAsync(BANNER_PATH);
         if (!bannerData[newUser.id]) bannerData[newUser.id] = [];
 
         const oldBannerURL = oldUser.bannerURL?.({ dynamic: true, size: 1024 }) || null;
@@ -126,22 +104,21 @@ function setupTracking(client) {
             changedAt: new Date().toISOString(),
           });
 
-          // Keep last 20 only
           if (bannerData[newUser.id].length > 20) {
             bannerData[newUser.id] = bannerData[newUser.id].slice(-20);
           }
 
-          saveJSON(BANNER_PATH, bannerData);
-          log(`Tracked banner change for ${newUser.username}`, 'debug');
+          await saveJSONAsync(BANNER_PATH, bannerData);
+          log(`Tracked banner change for ${newUser.username}`, 'debug', client.user?.username || 'Unknown');
         }
       }
 
     } catch (err) {
-      log(`Error in tracking userUpdate: ${err.message}`, 'warn');
+      log(`Error in tracking userUpdate: ${err.message}`, 'debug', client.user?.username || 'Unknown');
     }
   });
 
-  log('PFP, username and banner tracking initialized (friends-only)', 'debug');
+  log('PFP, username and banner tracking initialized', 'debug');
 }
 
 // ============================================
@@ -160,9 +137,9 @@ function displayBanner() {
     });
 
     console.log(chalk.cyan("> ") + chalk.gray("Barro selfbot initialized"));
-console.log(chalk.cyan("> ") + chalk.gray("Private build"));
-console.log(chalk.cyan("> ") + chalk.gray("Use responsibly"));
-console.log(chalk.cyan("> ") + chalk.gray("Developed by Barro"));
+    console.log(chalk.cyan("> ") + chalk.gray("Private build"));
+    console.log(chalk.cyan("> ") + chalk.gray("Use responsibly"));
+    console.log(chalk.cyan("> ") + chalk.gray("Developed by Barro"));
     console.log("\n");
   } catch (error) {
     console.log("\n");
@@ -208,39 +185,276 @@ function validateToken(token) {
 }
 
 // ============================================
+// BOT CONTROL FUNCTIONS
+// ============================================
+
+function startLogoutCooldown() {
+  logoutCooldownActive = true;
+  logoutCooldownTimer = 60;
+
+  const countdownInterval = setInterval(() => {
+    logoutCooldownTimer--;
+    if (logoutCooldownTimer % 10 === 0 || logoutCooldownTimer <= 5) {
+      console.log(style(`Auto-login available in ${logoutCooldownTimer}s...`, '0;33'));
+    }
+
+    if (logoutCooldownTimer <= 0) {
+      clearInterval(countdownInterval);
+      logoutCooldownActive = false;
+      console.log(style('Ready to login again', '0;32'));
+    }
+  }, 1000);
+}
+
+function getLogoutStatus() {
+  if (!logoutCooldownActive) return null;
+  return logoutCooldownTimer;
+}
+
+async function loginBots(clients, config) {
+  if (isLoggedIn) {
+    console.log(style('At least one bot is already connected to Discord', '1;33'));
+    return;
+  }
+
+  if (logoutCooldownActive) {
+    console.log(style(`Login blocked for ${logoutCooldownTimer}s to avoid rate limiting...`, '1;33'));
+    console.log(style('Waiting before auto-login...', '0;36'));
+
+    while (logoutCooldownTimer > 0) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    console.log(style('Cooldown expired, proceeding with login...', '0;32'));
+  }
+
+  try {
+    console.log(style('Connecting all accounts to Discord...', '0;36'));
+
+    for (let i = 0; i < clients.length; i++) {
+      const client = clients[i];
+      const account = config.selfbot.accounts ? config.selfbot.accounts[i] : null;
+      const token = account ? account.token : (config.selfbot.token);
+      const accLabel = `Acc ${i + 1}`;
+
+      try {
+        await client.login(token);
+
+        // Assign the correct prefix after login
+        const fallbackPrefix = account?.prefix || config.selfbot.prefix || ',';
+        client.prefix = getUserPrefix(client.user.id, fallbackPrefix, client.user.id);
+
+        log(`Connected successfully`, 'success', accLabel);
+
+        if (config.nitro_sniper?.enabled !== false) {
+          try {
+            initNitroSniper(client);
+            log("Nitro sniper initialized", "debug", accLabel);
+          } catch (err) {
+            log(`Warning: Failed to initialize Nitro sniper: ${err.message}`, "warn", accLabel);
+          }
+        }
+      } catch (err) {
+        log(`Connection failed: ${err.message}`, 'error', accLabel);
+      }
+    }
+
+    isLoggedIn = true;
+  } catch (err) {
+    isLoggedIn = false;
+    console.log(style(`Critical error during multi-login: ${err.message}`, '1;31'));
+  }
+}
+
+async function logoutBots(clients, config) {
+  if (!isLoggedIn && clients.length === 0) {
+    console.log(style('No bots connected to Discord', '1;33'));
+    return;
+  }
+
+  try {
+    console.log(style('Disconnecting all bots from Discord...', '0;36'));
+
+    for (let i = 0; i < clients.length; i++) {
+      const client = clients[i];
+      const accLabel = `Acc ${i + 1}`;
+      try {
+        await client.destroy();
+        log(`Disconnected successfully`, 'success', accLabel);
+      } catch (err) {
+        log(`Disconnect failed: ${err.message}`, 'error', accLabel);
+      }
+    }
+
+    isLoggedIn = false;
+    const shutdownTime = Math.random() * 10 + 5;
+    console.log(style(`Cleaning up (${Math.round(shutdownTime)}s)...`, '0;33'));
+
+    await new Promise(r => setTimeout(r, shutdownTime * 1000));
+
+    startLogoutCooldown();
+
+    // Re-initialize clients array
+    clients.length = 0;
+    const accounts = config.selfbot.accounts || (config.selfbot.token ? [{ token: config.selfbot.token }] : []);
+
+    for (const acc of accounts) {
+      const newClient = new Client({
+        checkUpdate: false,
+        autoRedeemNitro: true,
+        relationshipSweepInterval: 60,
+        restRequestTimeout: 60000,
+        partials: ['MESSAGE', 'CHANNEL', 'REACTION', 'USER', 'GUILD_MEMBER'],
+        ws: {
+          properties: {
+            $browser: config.client_properties?.browser || "Discord Client",
+          },
+        },
+      });
+
+      newClient.config = config;
+      newClient.noprefix = false;
+      newClient.commands = new Map();
+      newClient.cooldowns = new Map();
+
+      setupAntiCrash(newClient);
+      setupRateLimit(newClient);
+
+      clients.push(newClient);
+    }
+
+  } catch (err) {
+    console.log(style(`Critical logout error: ${err.message}`, '1;31'));
+  }
+}
+
+async function restartBots(clients, config) {
+  console.log(style('Restarting all bots...', '0;36'));
+  await logoutBots(clients, config);
+
+  while (logoutCooldownTimer > 0) {
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  await loginBots(clients, config);
+}
+
+// ============================================
+// TERMINAL INTERFACE SETUP
+// ============================================
+
+function setupTerminalInterface(clients, config) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  displaySimpleMenu();
+
+  const prompt = () => {
+    rl.question(style('> ', '0;36'), async (input) => {
+      const command = input.trim().toLowerCase();
+
+      switch (command) {
+        case 'login':
+          await loginBots(clients, config);
+          break;
+
+        case 'logout':
+          await logoutBots(clients, config);
+          break;
+
+        case 'restart':
+          await restartBots(clients, config);
+          break;
+
+        case 'status':
+          console.log('');
+          if (clients.length === 0) {
+            console.log(style('No bots configured', '1;31'));
+          } else {
+            clients.forEach((client, index) => {
+              const accLabel = `Acc ${index + 1}`;
+              const connected = client.user ? style('Connected', '0;32') : style('Disconnected', '1;31');
+              const prefix = client.prefix || 'None';
+              console.log(style(`${accLabel} Status: `, '0;36') + connected + style(` | Prefix: ${prefix}`, '0;37'));
+              if (client.user) {
+                console.log(style(`${accLabel} Account: `, '0;36') + client.user.username);
+              }
+            });
+          }
+          console.log('');
+          break;
+
+        case 'exit':
+          console.log(style('Exiting...', '0;33'));
+          await gracefulShutdown('USER_COMMAND', 0, rl);
+          return;
+
+        case 'help':
+          displaySimpleMenu();
+          prompt();
+          return;
+
+        case '':
+          prompt();
+          return;
+
+        default:
+          console.log(style('Unknown command. Type "help" for available commands.', '1;31'));
+          break;
+      }
+
+      prompt();
+    });
+  };
+
+  prompt();
+}
+
+async function gracefulShutdown(signal, exitCode = 0, rl = null) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  log(`\nReceived ${signal} signal, shutting down...`, "warn");
+
+  try {
+    if (rl) {
+      rl.close();
+    }
+    await TaskManager.cleanup();
+
+    for (const client of clients) {
+      if (client?.destroy) {
+        await client.destroy();
+      }
+    }
+    log("Shutdown completed", "success");
+  } catch (error) {
+    log(`Error during shutdown: ${error.message}`, "error");
+    exitCode = 1;
+  } finally {
+    setTimeout(() => process.exit(exitCode), 100);
+  }
+}
+
+// ============================================
 // SIGNAL HANDLERS
 // ============================================
 
-function setupSignalHandlers(discordClient) {
-  const gracefulShutdown = async (signal, exitCode = 0) => {
-    if (isShuttingDown) return;
-    isShuttingDown = true;
-    log(`\nReceived ${signal} signal, shutting down...`, "warn");
-
-    try {
-      await TaskManager.cleanup();
-      if (discordClient?.destroy) {
-        discordClient.destroy();
-      }
-      log("Shutdown completed", "success");
-    } catch (error) {
-      log(`Error during shutdown: ${error.message}`, "error");
-      exitCode = 1;
-    } finally {
-      setTimeout(() => process.exit(exitCode), 100);
-    }
+function setupSignalHandlers() {
+  const handleSignal = async (signal, exitCode = 0) => {
+    await gracefulShutdown(signal, exitCode);
   };
 
-  process.on("SIGINT", () => gracefulShutdown("SIGINT", 0));
-  process.on("SIGTERM", () => gracefulShutdown("SIGTERM", 0));
-  process.on("SIGQUIT", () => gracefulShutdown("SIGQUIT", 0));
+  process.on("SIGINT", () => handleSignal("SIGINT", 0));
+  process.on("SIGTERM", () => handleSignal("SIGTERM", 0));
+  process.on("SIGQUIT", () => handleSignal("SIGQUIT", 0));
   process.on("uncaughtException", (error) => {
     log(`Uncaught Exception: ${error.message}`, "error");
-    gracefulShutdown("UNCAUGHT_EXCEPTION", 1);
+    handleSignal("UNCAUGHT_EXCEPTION", 1);
   });
   process.on("unhandledRejection", (reason) => {
     log(`Unhandled Rejection: ${reason}`, "error");
-    gracefulShutdown("UNHANDLED_REJECTION", 1);
+    handleSignal("UNHANDLED_REJECTION", 1);
   });
 }
 
@@ -253,55 +467,78 @@ async function initializeSelfbot() {
     log("Loading configuration...", "info");
     const config = loadConfig();
 
-    // Prefer the token from DISCORD_TOKEN environment variable over config.yaml.
-    // A leaked config.yaml leaks your account; an env-var token is bound to the
-    // current process and is not committed to source control.
-    const envToken = process.env.DISCORD_TOKEN || process.env.SELFBOT_TOKEN;
-    if (envToken) {
-      config.selfbot.token = envToken;
-      log("Token loaded from environment variable", "debug");
-    }
-
-    log("Validating Discord token...", "info");
-    const tokenValidation = validateToken(config.selfbot?.token);
-
-    if (!tokenValidation.isValid) {
-      console.error(chalk.red("\n[TOKEN ERROR] " + tokenValidation.error));
+    const accounts = config.selfbot.accounts || (config.selfbot.token ? [{ token: config.selfbot.token }] : []);
+    if (accounts.length === 0) {
+      console.error(chalk.red("\n[TOKEN ERROR] No accounts provided in config.yaml."));
       process.exit(1);
     }
 
-    log("Initializing Discord client...", "info");
-    client = new Client({
-      checkUpdate: false,
-      autoRedeemNitro: true,
-      relationshipSweepInterval: 3600,
-      restRequestTimeout: 60000,
-      // No ws.properties override — let the library send the real desktop
-      // fingerprint instead of a mismatched mobile user-agent from Windows.
+    log(`Validating accounts...`, "info");
+    const validAccounts = [];
+    for (let i = 0; i < accounts.length; i++) {
+      const acc = accounts[i];
+      const token = acc && typeof acc === 'object' ? acc.token : acc;
+      if (!token || (typeof token === 'string' && token.trim() === "")) {
+        log(`Skipping Account ${i + 1}: No token provided.`, 'debug');
+        continue;
+      }
+      const validation = validateToken(token);
+      if (!validation.isValid) {
+        log(`Skipping Account ${i + 1}: ${validation.error}`, 'warn');
+        continue;
+      }
+      validAccounts.push(accounts[i]);
+    }
+
+    if (validAccounts.length === 0) {
+      console.error(chalk.red("\n[TOKEN ERROR] No valid tokens found. Bot cannot start."));
+      process.exit(1);
+    }
+
+    log(`Initializing ${validAccounts.length} Discord clients...`, "info");
+
+    clients = validAccounts.map((acc, index) => {
+      const token = acc.token || acc;
+      const client = new Client({
+        checkUpdate: false,
+        autoRedeemNitro: true,
+        relationshipSweepInterval: 60,
+        restRequestTimeout: 60000,
+        partials: ['MESSAGE', 'CHANNEL', 'REACTION', 'USER', 'GUILD_MEMBER'],
+        ws: {
+          properties: {
+            $browser: config.client_properties?.browser || "Discord Client",
+          },
+        },
+      });
+
+      client.config = config;
+      client.prefix = acc.prefix || config.selfbot.prefix;
+      client.noprefix = false;
+      client.commands = new Map();
+      client.cooldowns = new Map();
+
+      setupAntiCrash(client);
+      setupRateLimit(client);
+
+      return client;
     });
 
-    client.config = config;
-    client.prefix = config.selfbot.prefix;
-    client.noprefix = false;
-    client.commands = new Map();
-    client.cooldowns = new Map();
+    log("Commands", "info");
+    let totalCommands = 0;
+    for (const client of clients) {
+      const count = await loadCommands(client);
+      if (totalCommands === 0) totalCommands = count;
+    }
+    log(`Loaded ${totalCommands} unique commands for all ${clients.length} accounts`, "success");
 
-    log("Setting up anti-crash system...", "info");
-    setupAntiCrash(client);
+    log("Events", "info");
+    for (const client of clients) {
+      await loadEvents(client);
+    }
+    log(`Loaded events for all ${clients.length} accounts`, "success");
 
-    log("Setting up rate limit handler...", "info");
-    setupRateLimit(client);
-
-    log("Loading commands...", "info");
-    const commandCount = await loadCommands(client);
-    log(`Loaded ${commandCount} commands successfully`, "success");
-
-    log("Loading events...", "info");
-    const eventCount = await loadEvents(client);
-    log(`Loaded ${eventCount} events successfully`, "success");
-
-    log("Setting up signal handlers...", "info");
-    setupSignalHandlers(client);
+    setupSignalHandlers();
 
     await wait(1000);
 
@@ -311,56 +548,44 @@ async function initializeSelfbot() {
       console.log("\n".repeat(10));
     }
 
-    displayBanner();
+    // displayBanner(); // Disabled to reduce terminal noise
 
-    log("Connecting to Discord...", "info");
 
-    try {
-      await client.login(config.selfbot.token);
-      log("Successfully connected to Discord!", "success");
-    } catch (loginError) {
-      if (loginError.message.includes("TOKEN_INVALID")) {
-        console.error(chalk.red("\n[LOGIN ERROR] Invalid Discord token"));
-      } else if (loginError.message.includes("RATE_LIMITED")) {
-        console.error(chalk.red("\n[LOGIN ERROR] Rate limited by Discord"));
-      } else {
-        console.error(chalk.red("\n[LOGIN ERROR] " + loginError.message));
-      }
-      process.exit(1);
-    }
+    console.log(style('\nBot initialized and ready', '0;36'));
 
-    // Step 9: Initialize additional features
-    log("Initializing additional features...", "debug");
+    isLoggedIn = false;
 
     try {
-      // Initialize Nitro sniper if enabled
       if (config.nitro_sniper?.enabled !== false) {
-        initNitroSniper(client);
-        log("Nitro sniper initialized", "debug");
+        log("Nitro sniper ready", "debug");
       }
 
-      // ✅ START TRACKING PFP, USERNAME AND BANNER
-      setupTracking(client);
-
+      for (const client of clients) {
+        setupTracking(client);
+      }
     } catch (featureError) {
       log(`Warning: Failed to initialize some features: ${featureError.message}`, "warn");
     }
 
-    log("Selfbot initialization completed successfully!", "debug");
-    log(`Bot is ready with prefix: ${client.prefix}`, "debug");
+    log(`Multi-account initialization completed successfully! (${clients.length} accounts)`, "debug");
 
+    return config;
   } catch (error) {
     console.error(chalk.red("\n[INITIALIZATION ERROR] " + error.message));
     if (error.stack) console.error(chalk.gray(error.stack));
-    if (client) {
-      try { client.destroy(); } catch {}
+    if (clients.length > 0) {
+      try {
+        for (const c of clients) c.destroy();
+      } catch {}
     }
     process.exit(1);
   }
 }
 
-log("Starting Barro Selfbot...", "info");
-initializeSelfbot().catch((error) => {
+log("Starting Barro Multi-Account Selfbot...", "info");
+initializeSelfbot().then((config) => {
+  setupTerminalInterface(clients, config);
+}).catch((error) => {
   console.error(chalk.red("\n[FATAL ERROR] " + error.message));
   process.exit(1);
 });

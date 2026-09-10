@@ -7,77 +7,75 @@ export default {
 
   execute: async (client, message) => {
     try {
-      // Initialize cache if not exists
       if (!client._deletedMessages) {
         client._deletedMessages = new Map();
         log("Initialized deleted messages cache", "debug");
       }
 
-      // Skip invalid messages
-      if (!message || !message.author) {
-        log("Skipping invalid message in messageDelete event", "debug");
+      // Log every deletion event to terminal for debugging
+      log(`messageDelete event fired for message ID: ${message.id}`, "debug");
+
+      let cachedMsg = null;
+      if (client._messageCache && client._messageCache.has(message.channel.id)) {
+        const channelCache = client._messageCache.get(message.channel.id);
+        cachedMsg = channelCache.find(m => m.id === message.id);
+        log(`Found message in custom cache: ${!!cachedMsg}`, "debug");
+      }
+
+      const finalMsg = cachedMsg || message;
+
+      if (!finalMsg || !finalMsg.author) {
+        log(`Skipping: No author found`, "debug");
         return;
       }
 
-      // Skip bot messages
-      if (message.author.bot) {
-        log(`Skipping bot message from ${message.author.tag}`, "debug");
+      if (finalMsg.author.bot) {
+        log(`Skipping: Bot message`, "debug");
         return;
       }
 
-      // ⚠️ REMOVED the skip own message check so DMs and GCs work
-      // In DMs/GCs you ARE the author so we need to cache these too
+      // Skip if the message is from an OWNER
+      const owners = client.config?.owners || [];
+      if (owners.includes(finalMsg.author.id)) {
+        log(`Skipping: Owner message`, "debug");
+        return;
+      }
 
-      log(
-        `Processing deleted message from ${message.author.tag} in ${
-          message.channel.name || message.channel.id
-        }`,
-        "debug"
-      );
+      log(`Caching deleted message from ${finalMsg.author.tag} in ${message.channel.id}`, "debug");
 
-      // Store deleted message in cache
-      client._deletedMessages.set(message.channel.id, {
-        content: message.content || "",
+      const deletedMessageData = {
+        content: finalMsg.content || "",
         author: {
-          id: message.author.id,
-          tag: message.author.tag,
-          displayAvatarURL: message.author.displayAvatarURL
-            ? message.author.displayAvatarURL()
-            : null,
+          id: finalMsg.author.id,
+          tag: finalMsg.author.tag,
+          displayAvatarURL: finalMsg.author.displayAvatarURL || (typeof finalMsg.author.displayAvatarURL === 'function' ? finalMsg.author.displayAvatarURL() : null),
         },
-        timestamp: Date.now(),
-        attachments: message.attachments
-          ? [...message.attachments.values()].map((att) => ({
-              name: att.name || "attachment",
-              url: att.url || att.proxyURL,
-              contentType: att.contentType || "unknown",
-              size: att.size || 0,
-            }))
-          : [],
-        // Store channel type so snipe knows where it came from
+        timestamp: finalMsg.timestamp || Date.now(),
+        attachments: finalMsg.attachments || [],
         channelType: message.channel.type,
-        // Store guild info if available
         guildName: message.guild?.name || null,
         channelName: message.channel.name || null,
-      });
+      };
 
-      // Handle stalk logging
+      // Store in array, keeping last 10 messages per channel
+      if (!client._deletedMessages.has(message.channel.id)) {
+        client._deletedMessages.set(message.channel.id, []);
+      }
+      const channelMessages = client._deletedMessages.get(message.channel.id);
+      channelMessages.unshift(deletedMessageData); // Add to beginning
+      if (channelMessages.length > 10) {
+        channelMessages.pop(); // Remove oldest if more than 10
+      }
+
       if (StalkManager.isStalking(message.author.id)) {
         StalkManager.logMessageEvent(message.author.id, 'MESSAGE_DELETED', {
           guildName: message.guild?.name,
           channelName: message.channel.name || message.channel.id,
-          content: message.content
+          content: finalMsg.content
         });
       }
 
-      log(
-        `Cached deleted message from ${message.author.tag} in ${
-          message.channel.name || message.channel.id
-        }`,
-        "debug"
-      );
-      log(`Cache now has ${client._deletedMessages.size} entries`, "debug");
-
+      log(`Cached deleted message from ${finalMsg.author.tag} (total: ${channelMessages.length})`, "debug");
     } catch (error) {
       log(`Error in messageDelete event: ${error.message}`, "error");
       console.error("Full error:", error);

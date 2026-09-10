@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 export default {
   name: "todo",
-  description: "Manage your personal todo list",
+  description: "Manage personal tasks",
   aliases: ["task", "reminder"],
   usage: "<task> | list | clear",
   category: "general",

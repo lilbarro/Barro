@@ -16,12 +16,13 @@
  * @author lilbarro
  */
 
-import chalk from "chalk";
 import { readAfkData, writeAfkData } from "../utils/afkHandler.js";
 import { formatTime, log, loadConfig } from "../utils/functions.js";
-import { clownifySessions } from "../commands/fun/clownify.js";
-import { badReplySessions, getBadReplies } from "../commands/main/badreply.js";
+import { badReplySessions, getBadReplies } from "../commands/troll/badreply.js";
 import StalkManager from "../utils/StalkManager.js";
+import { handleAIReply } from "../utils/aiReplyHandler.js";
+import { handleOllamaReply } from "../utils/ollamaReplyHandler.js";
+import { handleAiAfkMessage } from "../utils/aiAfkHandler.js";
 
 export default {
   name: "messageCreate",
@@ -39,17 +40,60 @@ export default {
    *              filtering to prevent bot loops and unwanted triggers.
    */
   execute: async (client, message) => {
-    // Basic runtime trace for debugging
+    // Handle incoming message events
     try {
       const guildId = message.guild?.id || 'DM';
       const preview = (message.content || '').replace(/\n/g, ' ').slice(0, 120);
-      console.log(`[messageCreate] received from ${message.author.id} (${message.author.tag}) in ${guildId}: "${preview}"`);
-    } catch (e) {}
+      log(`[messageCreate] received from ${message.author.id} (${message.author.tag}) in ${guildId}: "${preview}"`, 'debug');
+
+      // --- CUSTOM MESSAGE CACHE FOR SNIPING ---
+      if (!client._messageCache) {
+        client._messageCache = new Map();
+      }
+      const channelId = message.channel.id;
+      if (!client._messageCache.has(channelId)) {
+        client._messageCache.set(channelId, []);
+      }
+      const cache = client._messageCache.get(channelId);
+      cache.push({
+        id: message.id,
+        content: message.content,
+        author: {
+          id: message.author.id,
+          tag: message.author.tag,
+          displayAvatarURL: message.author.displayAvatarURL ? message.author.displayAvatarURL() : null,
+        },
+        timestamp: message.createdTimestamp,
+        attachments: message.attachments ? [...message.attachments.values()].map(att => ({
+          name: att.name,
+          url: att.url,
+          contentType: att.contentType,
+          size: att.size
+        })) : [],
+        // For editsnipe
+        oldContent: message.content
+      });
+      // Limit cache to last 50 messages per channel to avoid memory leak
+      if (cache.length > 50) {
+        cache.shift();
+      }
+    } catch (e) {
+      console.error(`[messageCreate] Cache error: ${e.message}`);
+    }
 
     // Skip processing messages from bots to prevent loops
     if (message.author.bot) {
-      console.log('[messageCreate] skipped - author is bot');
+      log('[messageCreate] skipped - author is bot', 'debug');
       return;
+    }
+
+    // Handle AI Reply and AI AFK
+    try {
+      await handleAIReply(client, message);
+      await handleOllamaReply(client, message);
+      await handleAiAfkMessage(client, message);
+    } catch (err) {
+      log(`AI Handler error: ${err.message}`, 'error');
     }
 
     // Load current AFK data from storage
@@ -121,43 +165,12 @@ export default {
       }
     }
 
-    // Handle clownify reactions
-    const guildId = message.guild?.id || "dm";
-    const sessionKey = `${message.author.id}:${guildId}`;
-
-    if (clownifySessions.has(sessionKey)) {
-      const sessionData = clownifySessions.get(sessionKey);
-      try {
-        await message.react("🤡");
-        sessionData.messageCount++;
-        log(
-          `Clownified message from ${message.author.username} (${sessionData.messageCount} total)`,
-          "debug"
-        );
-      } catch (error) {
-        log(
-          `Failed to clownify message from ${message.author.username}: ${error.message}`,
-          "warn"
-        );
-
-        // If we can't react (permissions lost), stop the session
-        if (error.status === 403) {
-          if (sessionData.task) {
-            sessionData.task.stop();
-          }
-          clownifySessions.delete(sessionKey);
-          log(
-            `Stopped clownify session for ${message.author.username} due to missing permissions`,
-            "debug"
-          );
-        }
-      }
-    }
     // No longer using per-message mocking; use configured mock replies instead
 
     // Handle bad reply (auto-mock) sessions
+    const sessionKey = `${message.author.id}:${message.guild?.id || "dm"}`;
     log(`Checking badReplySessions for ${sessionKey}`, 'debug');
-    console.log(`[badreply] checking sessionKey=${sessionKey} author=${message.author.id} authorTag=${message.author.tag}`);
+    log(`[badreply] checking sessionKey=${sessionKey} author=${message.author.id} authorTag=${message.author.tag}`, 'debug');
     if (badReplySessions.has(sessionKey)) {
       const sessionData = badReplySessions.get(sessionKey);
       try {
@@ -199,7 +212,7 @@ export default {
         const fallbackKey = otherKeys[0];
         const sessionData = badReplySessions.get(fallbackKey);
         try {
-          console.log(`[badreply] fallback session used: ${fallbackKey} for author=${message.author.id}`);
+          log(`[badreply] fallback session used: ${fallbackKey} for author=${message.author.id}`, 'debug');
           const replies = getBadReplies();
           const reply = replies[Math.floor(Math.random() * replies.length)];
           await message.reply(reply);
@@ -245,9 +258,7 @@ export default {
     if (message.channel.type === "DM") {
       const config = loadConfig();
       if (config.selfbot.dm_logs) {
-        console.log(
-          chalk.blue(`[DM] ${message.author.tag}: ${message.content}`)
-        );
+        log(`[DM] ${message.author.tag}: ${message.content}`, 'debug');
       }
     }
   },

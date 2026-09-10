@@ -1,9 +1,10 @@
 import chalk from 'chalk';
 import { log } from '../../utils/functions.js';
+import { THEME } from '../../utils/theme.js';
 
 export default {
     name: 'serverinfo',
-    description: 'Fetches and displays detailed information about the server.',
+    description: 'Display detailed server information',
     aliases: ['si', 'server'],
     usage: '',
     category: 'general',
@@ -18,6 +19,9 @@ export default {
      * @param {Array} args - Command arguments
      */
     execute: async (client, message, args) => {
+        if (args[0] && ['help', '--help', '-h'].includes(args[0].toLowerCase())) {
+            return message.channel.send(`> **ServerInfo Help**\n> Usage: \`${client.prefix}serverinfo\`\n> Aliases: ${client.prefix}si, ${client.prefix}server`);
+        }
         const guild = message.guild;
 
         try {
@@ -51,23 +55,23 @@ export default {
                 ).join(', ') : 'None';
 
             const serverInfoMessage = formatAnsiBlock([
-                style(`Server Information for ${guild?.name || 'Unknown Server'}`, '1;30'),
+                style(`Server Information for ${guild?.name || 'Unknown Server'}`, THEME.HEADER_BOLD_COLOR),
                 '',
-                `${style('Owner:', '1;31')} ${ownerDisplay}`,
-                `${style('Server ID:', '1;31')} ${guild?.id || 'Unknown'}`,
-                `${style('Created On:', '1;31')} ${guild?.createdAt ? guild.createdAt.toUTCString() : 'Unknown'}`,
+                `${style('Owner:', THEME.LABEL_COLOR)} ${style(ownerDisplay, THEME.ACCENT_COLOR)}`,
+                `${style('Server ID:', THEME.LABEL_COLOR)} ${style(guild?.id || 'Unknown', THEME.ACCENT_COLOR)}`,
+                `${style('Created On:', THEME.LABEL_COLOR)} ${style(guild?.createdAt ? guild.createdAt.toUTCString() : 'Unknown', THEME.ACCENT_COLOR)}`,
                 '',
-                `${style('Members:', '1;31')} ${guild?.memberCount || 0}`,
-                `${style('Channels:', '1;31')} ${guild?.channels?.cache?.size || 0} total`,
-                `  - ${style('Text:', '1;31')} ${guild?.channels?.cache?.filter(c => c?.type === 'GUILD_TEXT')?.size || 0}`,
-                `  - ${style('Voice:', '1;31')} ${guild?.channels?.cache?.filter(c => c?.type === 'GUILD_VOICE')?.size || 0}`,
-                `  - ${style('Categories:', '1;31')} ${guild?.channels?.cache?.filter(c => c?.type === 'GUILD_CATEGORY')?.size || 0}`,
-                `${style('Roles:', '1;31')} ${guild?.roles?.cache?.size || 0}`,
+                `${style('Members:', THEME.LABEL_COLOR)} ${style(guild?.memberCount || 0, THEME.ACCENT_COLOR)}`,
+                `${style('Channels:', THEME.LABEL_COLOR)} ${style(guild?.channels?.cache?.size || 0, THEME.ACCENT_COLOR)} total`,
+                `  - ${style('Text:', THEME.LABEL_COLOR)} ${style(guild?.channels?.cache?.filter(c => c?.type === 'GUILD_TEXT')?.size || 0, THEME.ACCENT_COLOR)}`,
+                `  - ${style('Voice:', THEME.LABEL_COLOR)} ${style(guild?.channels?.cache?.filter(c => c?.type === 'GUILD_VOICE')?.size || 0, THEME.ACCENT_COLOR)}`,
+                `  - ${style('Categories:', THEME.LABEL_COLOR)} ${style(guild?.channels?.cache?.filter(c => c?.type === 'GUILD_CATEGORY')?.size || 0, THEME.ACCENT_COLOR)}`,
+                `${style('Roles:', THEME.LABEL_COLOR)} ${style(guild?.roles?.cache?.size || 0, THEME.ACCENT_COLOR)}`,
                 '',
-                `${style('Boost Tier:', '1;31')} ${guild?.premiumTier || 'None'}`,
-                `${style('Boosts:', '1;31')} ${guild?.premiumSubscriptionCount || 0}`,
-                `${style('Verification Level:', '1;31')} ${verificationLevels[guild?.verificationLevel] || 'Unknown'}`,
-                `${style('Features:', '1;31')} ${features}`
+                `${style('Boost Tier:', THEME.LABEL_COLOR)} ${style(guild?.premiumTier || 'None', THEME.ACCENT_COLOR)}`,
+                `${style('Boosts:', THEME.LABEL_COLOR)} ${style(guild?.premiumSubscriptionCount || 0, THEME.ACCENT_COLOR)}`,
+                `${style('Verification Level:', THEME.LABEL_COLOR)} ${style(verificationLevels[guild?.verificationLevel] || 'Unknown', THEME.ACCENT_COLOR)}`,
+                `${style('Features:', THEME.LABEL_COLOR)} ${style(features, THEME.ACCENT_COLOR)}`
             ]);
 
             await message.channel.send(serverInfoMessage).catch(err => {

@@ -1,12 +1,13 @@
 import { log } from "../../utils/functions.js";
 import TaskManager from "../../utils/TaskManager.js";
+import { THEME } from "../../utils/theme.js";
 
 // Map to store active typing sessions
 const typingSessions = new Map();
 
 export default {
   name: "faketyping",
-  description: "Show typing status indefinitely in a channel",
+  description: "Display continuous typing status",
   aliases: ["typing", "ft"],
   usage: "[stop]",
   category: "general",
@@ -15,6 +16,9 @@ export default {
   cooldown: 10,
 
   execute: async (client, message, args) => {
+    if (args[0] && ['help', '--help', '-h'].includes(args[0].toLowerCase())) {
+      return message.channel.send(`> **FakeTyping Help**\n> Usage: \`${client.prefix}faketyping [stop]\`\n> Aliases: ${client.prefix}typing, ${client.prefix}ft`);
+    }
     try {
       if (message.author.id !== client.user.id) return;
 
@@ -35,9 +39,9 @@ export default {
           typingSessions.delete(channelId);
 
           await message.channel.send(formatAnsiBlock([
-            style('[ FAKETYPING ]', '1;30'),
+            style('[ FAKETYPING ]', THEME.HEADER_BOLD_COLOR),
             '',
-            style('STATUS:', '1;31') + ' ' + style('Stopped fake typing in this channel.', '0;97')
+            style('STATUS:', THEME.LABEL_COLOR) + ' ' + style('Stopped fake typing in this channel.', THEME.ACCENT_COLOR)
           ]));
           log(
             `Stopped fake typing in channel #${
@@ -47,9 +51,9 @@ export default {
           );
         } else {
           await message.channel.send(formatAnsiBlock([
-            style('[ FAKETYPING ]', '1;30'),
+            style('[ FAKETYPING ]', THEME.HEADER_BOLD_COLOR),
             '',
-            style('ERROR:', '1;31') + ' ' + style('No active typing session in this channel.', '0;97')
+            style('ERROR:', THEME.LABEL_COLOR) + ' ' + style('No active typing session in this channel.', THEME.ACCENT_COLOR)
           ]));
         }
         return;
@@ -58,9 +62,9 @@ export default {
       // Check if there's already an active typing session for this channel
       if (typingSessions.has(channelId)) {
         await message.channel.send(formatAnsiBlock([
-          style('[ FAKETYPING ]', '1;30'),
+          style('[ FAKETYPING ]', THEME.HEADER_BOLD_COLOR),
           '',
-          style('ERROR:', '1;31') + ' ' + style('Already typing in this channel. Use `faketyping stop` to stop.', '0;97')
+          style('ERROR:', THEME.LABEL_COLOR) + ' ' + style('Already typing in this channel. Use `faketyping stop` to stop.', THEME.ACCENT_COLOR)
         ]));
         return;
       }
@@ -72,9 +76,9 @@ export default {
       
       if (!task) {
         await message.channel.send(formatAnsiBlock([
-          style('[ FAKETYPING ]', '1;30'),
+          style('[ FAKETYPING ]', THEME.HEADER_BOLD_COLOR),
           '',
-          style('ERROR:', '1;31') + ' ' + style('Failed to create typing task.', '0;97')
+          style('ERROR:', THEME.LABEL_COLOR) + ' ' + style('Failed to create typing task.', THEME.ACCENT_COLOR)
         ]));
         return;
       }
@@ -175,9 +179,9 @@ export default {
         });
 
         await message.channel.send(formatAnsiBlock([
-          style('[ FAKETYPING ]', '1;30'),
+          style('[ FAKETYPING ]', THEME.HEADER_BOLD_COLOR),
           '',
-          style('STATUS:', '1;31') + ' ' + style('Started fake typing in this channel. Use `faketyping stop` to stop.', '0;97')
+          style('STATUS:', THEME.LABEL_COLOR) + ' ' + style('Started fake typing in this channel. Use `faketyping stop` to stop.', THEME.ACCENT_COLOR)
         ]));
         log(
           `Started fake typing in channel #${message.channel.name || channelId}`,
@@ -186,9 +190,9 @@ export default {
       } catch (error) {
         log(`Error starting fake typing: ${error.message}`, "error");
         await message.channel.send(formatAnsiBlock([
-          style('[ FAKETYPING ]', '1;30'),
+          style('[ FAKETYPING ]', THEME.HEADER_BOLD_COLOR),
           '',
-          style('ERROR:', '1;31') + ' ' + style(`An error occurred: ${error.message}`, '0;97')
+          style('ERROR:', THEME.LABEL_COLOR) + ' ' + style(`An error occurred: ${error.message}`, THEME.ACCENT_COLOR)
         ]));
         // Don't call task.stop() here since we want the task to continue running
         // The task will be stopped when the user runs "faketyping stop"
@@ -196,9 +200,9 @@ export default {
     } catch (error) {
       log(`Error in faketyping command: ${error.message}`, 'error');
       message.channel.send(formatAnsiBlock([
-        style('[ FAKETYPING ]', '1;30'),
+        style('[ FAKETYPING ]', THEME.HEADER_BOLD_COLOR),
         '',
-        style('ERROR:', '1;31') + ' ' + style(`An error occurred: ${error.message}`, '0;97')
+        style('ERROR:', THEME.LABEL_COLOR) + ' ' + style(`An error occurred: ${error.message}`, THEME.ACCENT_COLOR)
       ]));
     }
   },

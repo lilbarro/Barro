@@ -2,7 +2,7 @@ import { log } from '../../utils/functions.js';
 
 export default {
     name: 'leavevc',
-    description: 'Leaves the current voice channel.',
+    description: 'Leave a voice channel',
     aliases: ['disconnectvc', 'dc'],
     usage: '[channel_id/channel_url]', // Optional: if specified, only leave that specific channel
     category: 'general',
@@ -17,6 +17,9 @@ export default {
      * @param {Array} args - Command arguments
      */
     execute: async (client, message, args) => {
+        if (args[0] && ['help', '--help', '-h'].includes(args[0].toLowerCase())) {
+            return message.channel.send(`> **LeaveVC Help**\n> Usage: \`${client.prefix}leavevc [channel ID|URL]\`\n> Aliases: ${client.prefix}disconnectvc, ${client.prefix}dc`);
+        }
         if (!message.guild) {
             return message.channel.send('> ❌ **Error:** This command can only be used in a server.');
         }

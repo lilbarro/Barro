@@ -8,6 +8,7 @@ import RpcManager from "../utils/RpcManager.js";
 import { RichPresence } from "discord.js-selfbot-v13";
 import { fileURLToPath } from "url";
 import path from "path";
+import { activateTheme } from "../utils/theme.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -16,6 +17,7 @@ export default {
   once: true,
 
   execute: async (client) => {
+    activateTheme(client.user?.id);
     console.log(chalk.cyan("─".repeat(50)));
 
     log(`Logged in as ${chalk.cyan(client.user.tag)}`, "success");
@@ -50,9 +52,10 @@ export default {
 
     try {
       const rpcConfig = await RpcManager.loadConfig();
+      client.rpcConfig = RpcManager.getConfigForClient(client);
 
-      if (rpcConfig && rpcConfig.rpc && rpcConfig.rpc.enabled) {
-        const success = await RpcManager.updatePresence(client);
+      if (client.rpcConfig && client.rpcConfig.rpc && client.rpcConfig.rpc.enabled) {
+        const success = await RpcManager.updatePresence(client, client.rpcConfig);
         if (success) {
           log("Rich Presence initialized successfully", "success");
         } else {
@@ -136,15 +139,6 @@ export default {
       } else {
         log("Relationship manager is not available!", "warn");
       }
-    }
-
-    // ✅ AI Reply handler
-    try {
-      const { handleAIReply } = await import('../utils/aiReplyHandler.js');
-      client.on('messageCreate', (message) => handleAIReply(client, message));
-      log('AI Reply handler initialized', 'info');
-    } catch (err) {
-      log('Failed to initialize AI Reply handler: ' + err.message, 'warn');
     }
 
     // ✅ AI AFK handler

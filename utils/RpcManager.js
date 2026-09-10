@@ -77,6 +77,28 @@ export class RpcManager {
     return this.rpcConfig;
   }
 
+  getConfigForClient(client) {
+    const accountId = client?.user?.id;
+    const accountConfig = accountId ? this.rpcConfig?.rpc?.accounts?.[accountId] : null;
+
+    if (!accountConfig) {
+      return this.rpcConfig;
+    }
+
+    const accountRpc = accountConfig.rpc || accountConfig;
+    return {
+      ...this.rpcConfig,
+      rpc: {
+        ...this.rpcConfig.rpc,
+        ...accountRpc,
+        default: {
+          ...this.rpcConfig.rpc.default,
+          ...(accountRpc.default || accountRpc)
+        }
+      }
+    };
+  }
+
   async fetchAssetsViaAPI(applicationId) {
     try {
       const apiUrl = `https://discord.com/api/v9/oauth2/applications/${applicationId}/assets`;
@@ -183,13 +205,13 @@ export class RpcManager {
     }
 
     try {
-      const config = customConfig || this.rpcConfig;
+      const config = customConfig || client.rpcConfig || this.getConfigForClient(client);
       if (!config || !config.rpc || !config.rpc.enabled) {
         return false;
       }
 
       const rpcData = config.rpc.default || {};
-      const applicationId = rpcData.application_id || '1306468377539379241';
+      const applicationId = config.rpc.application_id || rpcData.application_id || '1306468377539379241';
       
       const assetMap = await this.ensureAssetsFetched(client, applicationId);
       

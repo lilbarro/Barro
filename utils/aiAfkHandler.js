@@ -1,4 +1,18 @@
 import { loadConfig, log } from "./functions.js";
+import AIProvider from "./AIProvider.js";
+import { readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
+
+const AFK_SETTINGS_PATH = resolve('./data/aiafk_settings.json');
+
+function loadAfkSettings() {
+    try {
+        if (!existsSync(AFK_SETTINGS_PATH)) return {};
+        return JSON.parse(readFileSync(AFK_SETTINGS_PATH, 'utf-8'));
+    } catch {
+        return {};
+    }
+}
 
 export const afkSessions = new Map();
 const mentionLog = new Map();
@@ -61,51 +75,28 @@ function buildSystemPrompt(userName, reason, cfg) {
   const ui = cfg.user_info || {};
   const instructions = cfg.instructions || '';
   return instructions.trim() + '\n\n' +
-    'You are an AI assistant responding on behalf of ' + userName + ' who is currently AFK on Discord.\n' +
+    'You are Barro, a casual, blunt, deadpan Discord AI agent responding on behalf of ' + userName + ' who is currently AFK on Discord.\n' +
     'AFK Reason: ' + (reason || 'No reason given') + '\n\n' +
     'USER BACKGROUND:\n' +
     (ui.details ? '- ' + ui.details + '\n' : '') +
     (ui.background ? '- ' + ui.background + '\n' : '') +
     (ui.additional_info ? '- ' + ui.additional_info + '\n' : '') +
-    '\nRULES:\n' +
-    '1. Write in lowercase only\n' +
-    '2. Keep replies short 2-3 sentences max\n' +
-    '3. Never reveal you are an AI or which model powers you\n' +
-    '4. Never say you or the user are under 13 years old\n' +
-    '5. Make it clear the user is AFK but be helpful\n' +
-    '6. Only greet on first message skip greetings on follow ups\n' +
-    '7. Respond naturally like a real Discord user\n' +
-    '8. You are ' + userName + ' assistant not ' + userName + ' themselves';
-}
-
-async function callGroq(apiKey, messages) {
-  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + apiKey,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      messages: messages,
-      max_tokens: 150,
-      temperature: 0.85
-    })
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error('Groq API error: ' + response.status + ' - ' + err);
-  }
-
-  const json = await response.json();
-  return json.choices[0].message.content.trim();
+    '\nAFK IDENTITY RULES (OVERRIDE ANY CONFLICTING INSTRUCTIONS ABOVE):\n' +
+    '1. You are an AI agent, not ' + userName + '. Never claim to literally be ' + userName + '.\n' +
+    '2. On your first reply in each conversation, explicitly say you are an AI agent responding on behalf of ' + userName + '.\n' +
+    '3. Keep that AI-agent identity clear if anyone asks who you are or whether you are AI. Never hide it.\n' +
+    '4. Write in lowercase unless capitalization is needed for clarity.\n' +
+    '5. Keep ordinary replies short, casual, and natural, usually 1-3 sentences.\n' +
+    '6. Be chill, laid back, dry, blunt, and lightly sarcastic when appropriate; use current internet slang naturally, never force it.\n' +
+    '7. For simple greetings or low-context messages, answer with a short casual response instead of an essay.\n' +
+    '8. Answer genuine questions naturally and only become detailed when the topic calls for it.\n' +
+    '9. Make it clear that ' + userName + ' is AFK, but still be helpful.\n' +
+    '10. Greet only on the first message; do not repeat greetings on follow-ups.\n' +
+    '11. Never say you or the user are under 13 years old.\n' +
+    '12. Do not reveal the model or provider powering you.';
 }
 
 async function generateResponse(afkUserId, senderId, channelId, userMessage, cfg) {
-  const apiKey = loadConfig()?.ai?.groq_api_key;
-  if (!apiKey || !apiKey.trim()) throw new Error('No Groq API key configured');
-
   const session = afkSessions.get(afkUserId);
   const userName = session?.userName || 'the user';
   const reason = session?.reason || 'no reason given';
@@ -117,13 +108,16 @@ async function generateResponse(afkUserId, senderId, channelId, userMessage, cfg
     (isFirst ? '\n\n[first message - brief natural greeting is ok]' :
       '\n\n[follow up - do not greet again]');
 
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...history,
-    { role: 'user', content: userContent }
-  ];
+  const prompt = userContent;
+  const options = {
+    systemPrompt,
+    signal: AbortSignal.timeout(30000)
+  };
 
-  const aiResponse = await callGroq(apiKey, messages);
+  let aiResponse = await AIProvider.request(prompt, options);
+  if (isFirst && !/\b(ai agent|artificial intelligence|\bai\b)\b/i.test(aiResponse)) {
+    aiResponse = `i'm an ai agent responding on behalf of ${userName} while they're afk. ${aiResponse}`;
+  }
   addToHistory(afkUserId, senderId, channelId, userMessage, aiResponse);
   return aiResponse;
 }
@@ -131,11 +125,13 @@ async function generateResponse(afkUserId, senderId, channelId, userMessage, cfg
 export async function handleAiAfkMessage(client, message) {
   try {
     const cfg = loadConfig()?.ai_afk;
-    if (!cfg || !cfg.enabled) return;
+    const settings = loadAfkSettings();
+    if (!cfg || !settings[client.user?.id]) return;
 
     const authorId = message.author.id;
     const channelId = message.channel.id;
 
+    log(`[AI AFK] Trigger check for account ${client.user?.id}`, 'debug');
 
     // ---- SKIP BOTS ----
     if (message.author.bot) return;
@@ -147,21 +143,15 @@ export async function handleAiAfkMessage(client, message) {
     if (authorId === client.user?.id) return;
 
     // ---- FIND TARGETED AFK USER ----
-    // Trigger rules (locked-in, do not loosen):
-    //   * Guild channels: only when the message @mentions an AFK user.
-    //   * DMs (1:1 + group DMs): every incoming message is treated as addressed
-    //     to every active AFK session, since DMs have no @mention mechanic.
-    // This mirrors the AI Reply handler: the account never reacts to ambient
-    // traffic in busy servers, which is what makes selfbots look like bots.
     const targeted = new Set();
 
     for (const user of message.mentions.users.values()) {
-      if (afkSessions.has(user.id)) targeted.add(user.id);
+      if (user.id === client.user?.id && afkSessions.has(user.id)) targeted.add(user.id);
     }
 
     if (!message.guild) {
-      for (const id of afkSessions.keys()) {
-        if (id !== authorId && id !== client.user?.id) targeted.add(id);
+      if (afkSessions.has(client.user?.id)) {
+        targeted.add(client.user.id);
       }
     }
 

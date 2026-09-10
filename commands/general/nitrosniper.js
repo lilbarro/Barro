@@ -3,6 +3,7 @@ import axios from "axios";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { THEME } from "../../utils/theme.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,7 +33,7 @@ const CODE_REGEX = /[a-zA-Z0-9]{16,24}/;
 
 export default {
   name: "nitrosniper",
-  description: "Snipe Nitro gift codes automatically",
+  description: "Detect Nitro gift codes",
   aliases: ["sniper", "ns"],
   usage: "<on|off|status|stats|webhook|reset|settings>",
   category: "general",
@@ -41,6 +42,9 @@ export default {
   cooldown: 5,
 
   execute: async (client, message, args) => {
+    if (args[0] && ['help', '--help', '-h'].includes(args[0].toLowerCase())) {
+      return message.channel.send(`> **NitroSniper Help**\n> Usage: \`${client.prefix}nitrosniper <on|off|status|stats|webhook|reset|settings>\`\n> Options: \`webhook <url|clear>\`, \`settings <invalid|redeemed|fake|cooldown> [ms]\`\n> Aliases: ${client.prefix}sniper, ${client.prefix}ns`);
+    }
     try {
       if (message.author.id !== client.user.id) return;
 
@@ -87,12 +91,12 @@ export default {
         case "stats":
           // Show statistics
           const statsMessage = formatAnsiBlock([
-            `📊 ${style("Nitro Sniper Statistics", "1;30")}`,
-            `• ${style("Total codes detected:", "1;31")} ${sniperConfig.stats.total}`,
-            `• ${style("Invalid codes:", "1;31")} ${sniperConfig.stats.invalid}`,
-            `• ${style("Already redeemed:", "1;31")} ${sniperConfig.stats.alreadyRedeemed}`,
-            `• ${style("Rate limited:", "1;31")} ${sniperConfig.stats.ratelimited}`,
-            `• ${style("Successfully redeemed:", "1;31")} ${sniperConfig.stats.success}`,
+            `📊 ${style("Nitro Sniper Statistics", THEME.HEADER_BOLD_COLOR)}`,
+            `• ${style("Total codes detected:", THEME.LABEL_COLOR)} ${sniperConfig.stats.total}`,
+            `• ${style("Invalid codes:", THEME.LABEL_COLOR)} ${sniperConfig.stats.invalid}`,
+            `• ${style("Already redeemed:", THEME.LABEL_COLOR)} ${sniperConfig.stats.alreadyRedeemed}`,
+            `• ${style("Rate limited:", THEME.LABEL_COLOR)} ${sniperConfig.stats.ratelimited}`,
+            `• ${style("Successfully redeemed:", THEME.LABEL_COLOR)} ${sniperConfig.stats.success}`,
           ]);
 
           await message.channel.send(statsMessage);
@@ -201,13 +205,13 @@ export default {
           } else {
             // Show current settings
             const settingsMessage = formatAnsiBlock([
-              `⚙️ ${style("Nitro Sniper Settings", "1;30")}`,
-              `• ${style("Status:", "1;31")} ${sniperConfig.enabled ? "Enabled" : "Disabled"}`,
-              `• ${style("Invalid code notifications:", "1;31")} ${sniperConfig.notifyInvalid ? "Enabled" : "Disabled"}`,
-              `• ${style("Already redeemed notifications:", "1;31")} ${sniperConfig.notifyAlreadyRedeemed ? "Enabled" : "Disabled"}`,
-              `• ${style("Fake gift checking:", "1;31")} ${sniperConfig.checkFakeGifts ? "Enabled" : "Disabled"}`,
-              `• ${style("Cooldown:", "1;31")} ${sniperConfig.cooldown}ms`,
-              `• ${style("Webhook:", "1;31")} ${sniperConfig.webhookUrl ? "Set" : "Not set"}`,
+              `⚙️ ${style("Nitro Sniper Settings", THEME.HEADER_BOLD_COLOR)}`,
+              `• ${style("Status:", THEME.LABEL_COLOR)} ${sniperConfig.enabled ? "Enabled" : "Disabled"}`,
+              `• ${style("Invalid code notifications:", THEME.LABEL_COLOR)} ${sniperConfig.notifyInvalid ? "Enabled" : "Disabled"}`,
+              `• ${style("Already redeemed notifications:", THEME.LABEL_COLOR)} ${sniperConfig.notifyAlreadyRedeemed ? "Enabled" : "Disabled"}`,
+              `• ${style("Fake gift checking:", THEME.LABEL_COLOR)} ${sniperConfig.checkFakeGifts ? "Enabled" : "Disabled"}`,
+              `• ${style("Cooldown:", THEME.LABEL_COLOR)} ${sniperConfig.cooldown}ms`,
+              `• ${style("Webhook:", THEME.LABEL_COLOR)} ${sniperConfig.webhookUrl ? "Set" : "Not set"}`,
             ]);
 
             await message.channel.send(settingsMessage);
