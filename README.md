@@ -1,90 +1,229 @@
 <div align="center">
 
-<img src="https://cdn.discordapp.com/attachments/1536695130466287658/1547099255586553886/0s6xw08.png?ex=6aa22ff6&is=6aa0de76&hm=68ba2600aba004421a2fd6f0a024f46242f74e1013d9fe53b444480abc21190b&" alt="Barro logo" width="150" />
+# BARRO
 
-# Barro
+### The command center for a sharper Discord experience.
 
-`The selfbot with built-in AI features`
+<p>
+  <strong>AI workflows</strong> &nbsp;·&nbsp;
+  <strong>Multi-account control</strong> &nbsp;·&nbsp;
+  <strong>Quest automation</strong> &nbsp;·&nbsp;
+  <strong>ANSI themes</strong>
+</p>
 
-`Clean ANSI UI`  |  `Quest Completor`  |  `Multi-account state`
+<a href="#why-barro"><img src="https://img.shields.io/badge/BUILT%20FOR%20CONTROL-00c6ff?style=for-the-badge&logo=target&logoColor=white" alt="Built for control" /></a>
+<a href="#features"><img src="https://img.shields.io/badge/AI%20INSIDE-7f5cff?style=for-the-badge&logo=openai&logoColor=white" alt="AI inside" /></a>
+<a href="#quick-start"><img src="https://img.shields.io/badge/NODE.JS%2020%2B-35d07f?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js 20 or newer" /></a>
 
-<a href="#the-barro-method"><img src="https://img.shields.io/badge/Barro_Exclusive-20242b?style=flat-square" alt="Barro exclusive" /></a>
-<a href="#the-barro-method"><img src="https://img.shields.io/badge/AI_Built--In-d94f8a?style=flat-square" alt="AI built-in" /></a>
-<a href="#the-barro-method"><img src="https://img.shields.io/badge/Custom_Themes-4f86d9?style=flat-square" alt="Custom themes" /></a>
-<a href="#the-commands-worth-knowing"><img src="https://img.shields.io/badge/Quest_Control-3b9b78?style=flat-square" alt="Quest completor" /></a>
-<a href="#the-commands-worth-knowing"><img src="https://img.shields.io/badge/Multi--Account_State-8b6acb?style=flat-square" alt="Multi-account state" /></a>
+<br />
+<br />
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:00c6ff,45:5865f2,100:ff4ecd&height=130&section=header&animation=fadeIn" alt="Barro gradient banner" width="100%" />
 
 </div>
 
-Barro is a focused Discord control panel for people who want more control with less clutter. It brings automation, AI, quests, profile tools, account settings, and playful utilities into one clean interface that feels consistent every time you use it.
+> **Barro is a powerful, highly configurable Discord selfbot control layer for people who want more automation, more intelligence, and less friction.**
 
-### Barro In Discord
+It combines a fast prefix-command interface with account-aware settings, layered AI providers, quest tools, profile utilities, presence controls, tracking features, and a vivid ANSI presentation system. Everything runs locally, stays organized in files, and is designed to feel like one coherent product instead of a pile of disconnected scripts.
 
-These screenshots show Barro's compact command interface, visual system, and range of tools.
+<div align="center">
 
-<p align="center">
-  <img src="https://media.discordapp.net/attachments/1536709831828832397/1547230098648866956/vv164s6.png?ex=6aa2a9d1&is=6aa15851&hm=adbaff615d53c5b6a872d30ad48ba4d89acef3d66addfb6f1a66623b2b8a0e40&animated=true" alt="Barro command interface" width="280" />
-  <img src="https://media.discordapp.net/attachments/1536709831828832397/1547230100229984327/s9h4hm3.png?ex=6aa2a9d2&is=6aa15852&hm=4e3536b47fda8d32f3dfff1e88fc1b0c426e6768b0ee4b00dcb790aa7b89547c&animated=true" alt="Barro command interface" width="280" />
-</p>
-<p align="center">
-  <img src="https://media.discordapp.net/attachments/1536709831828832397/1547230100658065498/nh4qvw2.png?ex=6aa2a9d2&is=6aa15852&hm=9ca0cfbc5e908e61c95ed928b62df422f0307e0c19d9cc56b7ab5d58b30059e0&animated=true" alt="Barro command interface" width="280" />
-  <img src="https://media.discordapp.net/attachments/1536709831828832397/1547230099621937264/7qvqpt4.png?ex=6aa2a9d1&is=6aa15851&hm=b7cecdcfbd408868cc2cbd10d681120eaab779d9328e1f680a775678fef36e8c&animated=true" alt="Barro command interface" width="280" />
-</p>
+[Explore the features](#features) &nbsp; · &nbsp; [Get started](#quick-start) &nbsp; · &nbsp; [Read the docs](#documentation)
 
-## What Makes Barro Different
+</div>
 
-Barro keeps its interface small on purpose. Responses are tidy, easy to read, and built around the way people actually use Discord: quick commands, useful output, no giant walls of text.
+## Why Barro
 
-The theme is yours, too. Change the accents, headers, labels, dividers, and text until the bot feels like it belongs in your account. The clean look stays underneath, even when the colors change.
+Most automation tools make you choose between power and polish. Barro is built to keep both.
 
-AI is not hidden away as a separate feature. You can ask it something, let it reply for you, or leave it handling AFK responses while you are gone.
+- **One command layer:** discoverable prefix commands, aliases, pagination, and consistent output.
+- **One control surface:** manage accounts, prefixes, themes, AI providers, presence, and access from one configuration.
+- **One local workspace:** JSON-backed state keeps history, memory, backups, and feature data close to the runtime.
+- **One visual identity:** ANSI themes let every response match the account using it.
 
-Quests, whitelists, and playful tools round things out. Barro can handle the repetitive parts, keep access under control, and still have a few commands made purely for fun.
+Barro is made to be the most complete control panel in your Discord toolkit: practical for daily workflows, expressive in presentation, and extensible when you want to add another command.
 
-## The Commands Worth Knowing
+## Features
 
-The useful parts of Barro are easier to understand by category:
+### Intelligence that stays useful
 
-```yaml
-AI featured commands:
-  commands: |  ask, aireply, aiafk
-  purpose:      |  Questions, automatic replies, and away responses
+Connect the provider that fits the job. Barro supports Groq, Google Gemini, OpenAI, and local Ollama workflows, with configurable models and provider selection.
+
+- Ask questions with `ask` and `aiAsk`
+- Enable automatic replies with `aireply`
+- Let Barro handle AFK responses with `aiafk`
+- Use assistant workflows with `assist`
+- Generate images with `imagegen`
+- Keep local reply history with `ollamareply`
+- Build structured analysis with `dossier`
+
+### Automation without the clutter
+
+Barro turns repetitive account tasks into short commands with visible state and reusable managers.
+
+- Inspect and complete quests with `quest`
+- Monitor Nitro events with `nitrosniper`
+- Set global AFK state with `afk`
+- Run and stop background tasks
+- Apply rate limits to long-running features
+- Automatically clean up command output according to command type
+
+### Total account control
+
+Run one account or several. Each configured account can have its own prefix, theme, permissions, and persisted state.
+
+- Per-account prefixes and aliases
+- Allow lists and no-prefix access
+- Account information and token checks
+- Login, logout, restart, and status controls
+- Saved presence and custom status workflows
+- Rich Presence through `rpc.yml`
+
+### A visual system, not an afterthought
+
+Barro's interface is intentionally compact and expressive. Adjust the accent, header, labels, dividers, brand, version, and text colors, then save the result as a reusable preset.
+
+The result is a command experience that looks like yours every time it opens.
+
+### History, context, and visibility
+
+Keep useful context available without a database or hosted dashboard.
+
+- Avatar, banner, and username history
+- Relationship and request utilities
+- Stalk, shadow, expose, and dossier records
+- AI history and user memory
+- Command usage history
+- Local backups, debug output, and error logs
+
+## Command Map
+
+Commands are loaded recursively from [`commands/`](commands). Run your configured prefix followed by `help` to see the live menu.
+
+| Area | Key commands |
+| --- | --- |
+| **AI** | `ask`, `aiAsk`, `aireply`, `aiafk`, `assist`, `dossier`, `imagegen`, `ollamareply` |
+| **Automation** | `quest`, `nitrosniper`, `afk`, `todo`, `shortcut`, `page`, `taskStop` |
+| **Themes** | `accent`, `header`, `label`, `divider`, `brand`, `text`, `preset`, `version` |
+| **Presence** | `status`, `customstatus`, `rpc`, `spoof`, `savepresence` |
+| **Profile** | `avatar`, `banner`, `selfinfo`, `history`, `serverinfo`, `hypesquad` |
+| **Tracking** | `stalk`, `osint`, `dox`, `iplookup`, `snipe`, `editsnipe` |
+| **Social** | `friendlist`, `blocklist`, `ignoredlist`, `outgoingreq`, `upcomingreq` |
+| **Voice and fun** | `joinVC`, `leaveVC`, `fakemsg`, `faketyping`, `fakenitro` |
+| **Settings** | `prefix`, `allow`, `revoke`, `noprefix`, `backup`, `reload`, `view` |
+| **Server actions** | `purge`, `ban100`, `massban`, `nuke`, `ss`, `rc` |
+
+The command folders are the source of truth. Add a command module, restart Barro, and the loader can make it available without rewriting the launcher.
+
+## Quick Start
+
+### Requirements
+
+- Node.js 20 or newer
+- A local `config.yaml`
+- Valid account configuration
+- Optional provider credentials for AI and image generation
+- Ollama installed locally for local model workflows
+
+### Install
+
+```powershell
+npm install
+npm start
 ```
 
-```yaml
-Exclusive commands:
-  commands: |  quest, wl, snipe, editsnipe
-  purpose:      |  Quests, access control, and message recovery
-```
+Before starting:
+
+1. Open [`config.yaml`](config.yaml).
+2. Add one or more accounts under `selfbot.accounts`.
+3. Set a prefix for each account.
+4. Configure only the integrations you intend to use.
+5. Keep every token, API key, webhook URL, and wallet address private.
+
+Barro supports two startup styles:
 
 ```yaml
-Theme commands:
-  commands: |  accent, header, label, divider, text
-  purpose:      |  Tune the colors behind every response
+terminal:
+  startup_mode: direct  # Connect automatically
 ```
+
+Use `menu` instead of `direct` when you want terminal commands for `login`, `logout`, `restart`, `status`, and `exit`.
+
+## Configuration
+
+The live configuration is [`config.yaml`](config.yaml). Its major sections are:
 
 ```yaml
-Status commands:
-  commands: |  status, rpc, spoof, savepresence
-  purpose:      |  Shape how your account appears on Discord
+selfbot:             # accounts, prefixes, status, DM logs
+terminal:            # direct or menu startup
+client_properties:   # client identity settings
+logging:             # debug output and category filters
+relationship_logs:   # relationship event logging
+ai:                  # Groq, Gemini, Ollama, and OpenAI
+imagegen:            # Pollinations image generation
+ai_afk:              # automated away-message behavior
+vc_command:          # voice mute, deafen, and reconnect settings
+dossier:             # analysis depth and retention
+expose:              # external search settings
+shadow:              # tracking delays and follow behavior
 ```
 
-```yaml
-General commands:
-  commands: |  afk, avatar, banner, serverinfo, todo
-  purpose:      |  Everyday account tools for quick Discord tasks
+Rich Presence is configured in [`rpc.yml`](rpc.yml). See [`docs/CONFIG_GUIDE.md`](docs/CONFIG_GUIDE.md) for the complete configuration reference.
+
+## Architecture
+
+```text
+index.js                 Runtime entry point and account lifecycle
+config.yaml              Main account and feature configuration
+rpc.yml                  Rich Presence configuration
+commands/                Dynamically discovered command modules
+events/                  Discord event listeners
+handlers/                Command, event, rate-limit, and crash handling
+utils/                   Shared providers, managers, themes, and controllers
+data/                    Local JSON state, logs, histories, and backups
+docs/                    Feature and setup documentation
 ```
 
-## Made For Daily Use
+Barro is intentionally file-backed. Important state is stored locally under [`data/`](data/), including themes, prefixes, allow lists, AI history, assistant memory, relationship logs, tracking records, backups, and debug output.
 
-The nice thing about Barro is that it does not ask you to learn a whole new system. Pick a command, get a clean response, and move on. Your prefix, whitelist, profile history, statuses, and settings stay organized per account, so the bot feels familiar every time you come back to it.
+## Build Something Better
 
-Keep tokens, API keys, and webhook URLs private. Discord selfbots violate Discord's Terms of Service and may result in account action.
+Barro is modular by design. Shared behavior belongs in [`utils/`](utils), command behavior belongs in [`commands/`](commands), and event behavior belongs in [`events/`](events). When you add a feature:
+
+1. Keep account-specific state keyed to the active account.
+2. Reuse existing managers for themes, tasks, rate limits, and storage.
+3. Keep secrets out of source files and public commits.
+4. Run a syntax check before sharing the change.
+
+```powershell
+node --check index.js
+```
+
+## Safety and policy
+
+Barro uses `discord.js-selfbot-v13`. Discord selfbots are against Discord's Terms of Service and may result in account restrictions or termination. Use Barro only when you understand and accept that risk.
+
+Commands such as `nuke`, `massban`, `ban100`, and `purge` can cause irreversible changes. Use destructive actions only on servers you own or are explicitly authorized to administer.
+
+Never share account tokens, API keys, webhook URLs, wallet addresses, private logs, or generated reports. Rotate a credential immediately if it is exposed.
+
+## Documentation
+
+- [`docs/CONFIG_GUIDE.md`](docs/CONFIG_GUIDE.md) - configuration reference
+- [`docs/RPC.md`](docs/RPC.md) - Rich Presence setup
+- [`docs/GET_TOKEN.md`](docs/GET_TOKEN.md) - token documentation
+- [`docs/ANDROID.md`](docs/ANDROID.md) - Android notes
+- [`storage-guide.txt`](storage-guide.txt) - storage ownership and controllers
+- [`vencord-plugin/README.md`](vencord-plugin/README.md) - companion plugin notes
+
+## License
 
 Released under the [MIT License](LICENSE).
 
 <div align="center">
 
-`Barro // Summoning silence`
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:ff4ecd,45:5865f2,100:00c6ff&height=100&section=footer&animation=twinkling" alt="Barro gradient footer" width="100%" />
+
+<sub>BARRO // control the noise</sub>
 
 </div>
