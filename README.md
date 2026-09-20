@@ -11,10 +11,6 @@
   <strong>ANSI themes</strong>
 </p>
 
-<a href="#why-barro"><img src="https://img.shields.io/badge/BUILT%20FOR%20CONTROL-00c6ff?style=for-the-badge&logo=target&logoColor=white" alt="Built for control" /></a>
-<a href="#features"><img src="https://img.shields.io/badge/AI%20INSIDE-7f5cff?style=for-the-badge&logo=openai&logoColor=white" alt="AI inside" /></a>
-<a href="#quick-start"><img src="https://img.shields.io/badge/NODE.JS%2020%2B-35d07f?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js 20 or newer" /></a>
-
 <br />
 <br />
 
@@ -32,6 +28,14 @@ It combines a fast prefix-command interface with account-aware settings, layered
 
 </div>
 
+<div align="center">
+
+| <img src="https://img.shields.io/badge/01-00c6ff?style=for-the-badge" alt="01" /> | <img src="https://img.shields.io/badge/02-7c5cff?style=for-the-badge" alt="02" /> | <img src="https://img.shields.io/badge/03-ff4ecd?style=for-the-badge" alt="03" /> | <img src="https://img.shields.io/badge/04-35d07f?style=for-the-badge" alt="04" /> |
+| :---: | :---: | :---: | :---: |
+| **THINK**<br />AI workflows | **AUTOMATE**<br />Quest tools | **STYLE**<br />ANSI themes | **CONTROL**<br />Account state |
+
+</div>
+
 ## Why Barro
 
 Most automation tools make you choose between power and polish. Barro is built to keep both.
@@ -43,9 +47,11 @@ Most automation tools make you choose between power and polish. Barro is built t
 
 Barro is made to be the most complete control panel in your Discord toolkit: practical for daily workflows, expressive in presentation, and extensible when you want to add another command.
 
-## Features
+## Features <img src="https://img.shields.io/badge/BUILT%20TO%20STAND%20OUT-ff4ecd?style=flat" alt="Built to stand out" />
 
 ### Intelligence that stays useful
+
+<img src="https://img.shields.io/badge/AI%20LAB-7c5cff?style=flat&logo=sparkles&logoColor=white" alt="AI lab" />
 
 Connect the provider that fits the job. Barro supports Groq, Google Gemini, OpenAI, and local Ollama workflows, with configurable models and provider selection.
 
@@ -59,6 +65,8 @@ Connect the provider that fits the job. Barro supports Groq, Google Gemini, Open
 
 ### Automation without the clutter
 
+<img src="https://img.shields.io/badge/AUTOMATION%20ENGINE-00c6ff?style=flat&logo=zapier&logoColor=white" alt="Automation engine" />
+
 Barro turns repetitive account tasks into short commands with visible state and reusable managers.
 
 - Inspect and complete quests with `quest`
@@ -69,6 +77,8 @@ Barro turns repetitive account tasks into short commands with visible state and 
 - Automatically clean up command output according to command type
 
 ### Total account control
+
+<img src="https://img.shields.io/badge/ACCOUNT%20CONTROL-35d07f?style=flat&logo=shield&logoColor=white" alt="Account control" />
 
 Run one account or several. Each configured account can have its own prefix, theme, permissions, and persisted state.
 
@@ -81,11 +91,15 @@ Run one account or several. Each configured account can have its own prefix, the
 
 ### A visual system, not an afterthought
 
+<img src="https://img.shields.io/badge/ANSI%20STUDIO-ff4ecd?style=flat&logo=palette&logoColor=white" alt="ANSI studio" />
+
 Barro's interface is intentionally compact and expressive. Adjust the accent, header, labels, dividers, brand, version, and text colors, then save the result as a reusable preset.
 
 The result is a command experience that looks like yours every time it opens.
 
 ### History, context, and visibility
+
+<img src="https://img.shields.io/badge/LOCAL%20MEMORY-f6b73c?style=flat&logo=databricks&logoColor=white" alt="Local memory" />
 
 Keep useful context available without a database or hosted dashboard.
 
@@ -96,7 +110,7 @@ Keep useful context available without a database or hosted dashboard.
 - Command usage history
 - Local backups, debug output, and error logs
 
-## Command Map
+## Command Map <img src="https://img.shields.io/badge/EXPLORE%20THE%20STACK-00c6ff?style=flat" alt="Explore the stack" />
 
 Commands are loaded recursively from [`commands/`](commands). Run your configured prefix followed by `help` to see the live menu.
 
